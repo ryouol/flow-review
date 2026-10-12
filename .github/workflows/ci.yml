@@ -1,0 +1,36 @@
+name: Verify Flow Review
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check
+      - name: Exercise the composite action
+        id: report
+        uses: ./
+        with:
+          base: HEAD
+          head: HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: offline-demo
+          path: reports/demo.html
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-evidence
+          path: test-results/

@@ -1,0 +1,46 @@
+name: Flow Review
+description: Generate an offline TypeScript PR reader with a complete change ledger.
+inputs:
+  repo:
+    description: Already fetched checkout to analyze
+    required: true
+    default: '${{ github.workspace }}'
+  base:
+    description: Base commit or ref (comparison uses its merge base with head)
+    required: true
+  head:
+    description: Head commit or ref
+    required: false
+    default: HEAD
+  output-dir:
+    description: Directory for report.html and report.json
+    required: false
+    default: '${{ runner.temp }}/flow-review-report'
+outputs:
+  html:
+    description: Offline HTML reader path
+    value: '${{ steps.report.outputs.html }}'
+  json:
+    description: Machine-readable report path
+    value: '${{ steps.report.outputs.json }}'
+runs:
+  using: composite
+  steps:
+    - name: Build the trusted reader
+      shell: bash
+      working-directory: '${{ github.action_path }}'
+      run: |
+        npm ci
+        npm run build
+    - name: Analyze committed objects
+      id: report
+      shell: bash
+      env:
+        FLOW_REPO: '${{ inputs.repo }}'
+        FLOW_BASE: '${{ inputs.base }}'
+        FLOW_HEAD: '${{ inputs.head }}'
+        FLOW_OUTPUT: '${{ inputs.output-dir }}'
+        FLOW_TOOL: '${{ github.action_path }}'
+      run: |
+        node "$FLOW_TOOL/dist/cli.js" analyze --repo "$FLOW_REPO" --base "$FLOW_BASE" --head "$FLOW_HEAD" --out "$FLOW_OUTPUT/report.html"
+        printf 'html=%s/report.html\njson=%s/report.json\n' "$FLOW_OUTPUT" "$FLOW_OUTPUT" >> "$GITHUB_OUTPUT"
