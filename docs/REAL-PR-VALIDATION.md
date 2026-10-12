@@ -10,12 +10,12 @@ Times are single local analyzer runs, excluding cloning, fetching, HTML generati
 
 | PR | Files | Hunks | Added / deleted lines | Analyze time | Resolved / unresolved calls | Peek share |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [honojs/hono #5547](https://github.com/honojs/hono/pull/5547) | 5 | 14 | 63 / 16 | 3589 ms | 2 / 2411 | 0.1% |
-| [honojs/hono #5536](https://github.com/honojs/hono/pull/5536) | 3 | 8 | 113 / 29 | 2838 ms | 0 / 13 | 0.0% |
-| [colinhacks/zod #6587](https://github.com/colinhacks/zod/pull/6587) | 5 | 9 | 110 / 16 | 4396 ms | 55 / 126 | 30.4% |
-| [excalidraw/excalidraw #12260](https://github.com/excalidraw/excalidraw/pull/12260) | 9 | 30 | 477 / 498 | 9906 ms | 320 / 473 | 40.4% |
-| [nestjs/nest #18064](https://github.com/nestjs/nest/pull/18064) | 76 | 223 | 243 / 155 | 8277 ms | 35 / 100 | 25.9% |
-| [TanStack/query #11711](https://github.com/TanStack/query/pull/11711) | 14 | 28 | 74 / 50 | 6839 ms | 2 / 2 | 50.0% |
+| [honojs/hono #5547](https://github.com/honojs/hono/pull/5547) | 5 | 14 | 63 / 16 | 3128 ms | 2 / 2411 | 0.1% |
+| [honojs/hono #5536](https://github.com/honojs/hono/pull/5536) | 3 | 8 | 113 / 29 | 2303 ms | 0 / 13 | 0.0% |
+| [colinhacks/zod #6587](https://github.com/colinhacks/zod/pull/6587) | 5 | 9 | 110 / 16 | 4235 ms | 55 / 126 | 30.4% |
+| [excalidraw/excalidraw #12260](https://github.com/excalidraw/excalidraw/pull/12260) | 9 | 30 | 477 / 498 | 9638 ms | 320 / 473 | 40.4% |
+| [nestjs/nest #18064](https://github.com/nestjs/nest/pull/18064) | 76 | 223 | 243 / 155 | 7990 ms | 35 / 100 | 25.9% |
+| [TanStack/query #11711](https://github.com/TanStack/query/pull/11711) | 14 | 28 | 74 / 50 | 6955 ms | 2 / 2 | 50.0% |
 
 ## Connected changed declarations
 
@@ -65,6 +65,7 @@ A real Hono repeated-call defect was found and fixed: inserting repeated calls e
 - Hono's body-cache PR has no supported resolved calls from changed units, so it is primarily a raw-diff reading workflow. Large shared test functions can contain thousands of unresolved calls.
 - Whole-repository unresolved totals include both snapshots; they are not change-specific defect counts.
 - Extended TypeScript configuration is not loaded. Diagnostics disclose inherited alias uncertainty. External dependencies and standard-library types are not loaded; inferred contracts are incomplete type-checker observations.
+- Non-UTF8 filename bytes are explicitly refused rather than misdecoded. UTF8source BOMs are retained. The separate adversarial suite covers these release edge cases.
 - This sample does not prove all acquisition formats. Rename, binary, mode-only, symlink, deleted-file, hostile-path, and hostile-source cases require the separate adversarial suite.
 
 ## Reproduce

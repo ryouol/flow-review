@@ -9,13 +9,13 @@ Environment: macOS arm64, Node 22.23.2, Git 2.52.0, pinned npm lockfile.
 `npm run check` passed on the final product source:
 
 - TypeScript checking and production build passed.
-- 67 backend tests passed, with zero failures, skips, or cancellations.
+- 69 backend tests passed, with zero failures, skips, or cancellations.
 - 18 Chromium interaction tests passed, with zero retries.
 - The illustrative offline demo generated successfully.
 - The final live PR-URL command fetched Zod #6587 through authenticated GitHub CLI and produced 5 changed files and 9 original hunks; its temporary cache was cleaned up.
 - `npm audit` reported zero advisories across production and development dependencies at this checkpoint.
 
-Coverage includes direct-call provenance, exact original Git hunks and line ownership, changed versus untouched callers, uncertain contracts, LF/Unicode source locations, hostile imports/source strings, CSP executable hashing, binary/rename/delete/mode/symlink/gitlink changes, repository diff programs, replacement objects, local promisor-fetch refusal, offline disk opening, snapshot persistence, and mobile overflow.
+Coverage includes direct-call provenance, exact original Git hunks and line ownership, changed versus untouched callers, uncertain contracts, LF/Unicode source locations, hostile imports/source strings, CSP executable hashing, binary/rename/delete/mode/symlink/gitlink changes, repository diff programs, invalid UTF-8 filename refusal, source byte-order marks, replacement objects, local promisor-fetch refusal, offline disk opening, snapshot persistence, and mobile overflow.
 
 The checks exercise behavior within these cases. They are not a proof of correctness for arbitrary repositories.
 

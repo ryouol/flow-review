@@ -358,3 +358,42 @@ test('gitlink changes retain matching Subproject commit raw rows and complete so
     assert.equal(report.edits.filter(edit => edit.fileId === file.id).length, 2);
   } finally { r.close(); }
 });
+
+test('invalid UTF-8 Git filenames are explicitly refused in changed and unchanged trees', () => {
+  for (const scenario of ['changed', 'unchanged'] as const) {
+    const r = repo();
+    try {
+      const withInput = (args: string[], input: string | Buffer) => execFileSync('git', ['-C', r.path, ...args], { input, encoding: 'utf8', stdio: 'pipe' }).trim();
+      const blob = withInput(['hash-object', '-w', '--stdin'], 'changed content\n');
+      const invalidEntry = Buffer.concat([Buffer.from(`100644 blob ${blob}\tbad`), Buffer.from([0xff]), Buffer.from('.txt\0')]);
+      const invalidTree = withInput(['mktree', '-z'], invalidEntry);
+      const emptyTree = withInput(['mktree'], Buffer.alloc(0));
+      const base = r.git('commit-tree', scenario === 'changed' ? emptyTree : invalidTree, '-m', `${scenario} base`);
+      const headTree = scenario === 'changed' ? invalidTree : withInput(['mktree', '-z'], Buffer.concat([invalidEntry, Buffer.from(`100644 blob ${blob}\tvalid.txt\0`)]));
+      const head = r.git('commit-tree', headTree, '-p', base, '-m', `${scenario} head`);
+      const native = r.git('diff', '--numstat', base, head);
+      assert.match(native, /^1\t0\t/, 'Native Git really has one added text line');
+      if (scenario === 'unchanged') assert.ok(native.endsWith('valid.txt'), 'Changed-path inventory itself is valid; tree decoding must still catch the invalid unchanged path');
+      assert.throws(() => analyzeRepository({ repo: r.path, base, head }), /non.UTF.8|invalid.UTF.8|UTF.8.*filename|filename.*UTF.8/i, `${scenario}: refuse unsupported filename bytes rather than report zero lost hunks`);
+    } finally { r.close(); }
+  }
+});
+
+test('UTF-8 source BOM is preserved in complete snapshots and native changed-line text', () => {
+  const r = repo();
+  try {
+    const before = '\uFEFFexport function run() { return 1; }\n';
+    const after = '\uFEFFexport function run() { return 2; }\n';
+    r.write('main.ts', before);
+    const base = r.commit('base with BOM');
+    r.write('main.ts', after);
+    const head = r.commit('head with BOM');
+    const native = execFileSync('git', ['-C', r.path, 'diff', '--no-ext-diff', '--no-textconv', '--no-color', base, head, '--', 'main.ts'], { encoding: 'utf8', stdio: 'pipe' });
+    const report = analyzeRepository({ repo: r.path, base, head });
+    const file = report.files.find(file => file.path === 'main.ts')!;
+    assert.equal(file.base, before);
+    assert.equal(file.head, after);
+    assert.deepEqual(file.hunks.flatMap(hunk => hunk.lines.filter(line => line.kind !== 'context').map(line => line.text)), [before.slice(0, -1), after.slice(0, -1)]);
+    assert.deepEqual(report.edits.filter(edit => edit.fileId === file.id).map(edit => ({ side: edit.side, line: edit.line, text: edit.text })), gitChangedRows(native));
+  } finally { r.close(); }
+});

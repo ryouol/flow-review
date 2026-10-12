@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-10-12T04:57:29.709Z",
+  "recordedAt": "2026-10-12T05:04:41.850Z",
   "scope": "Real public PR snapshot validation and static navigation census; not a human comprehension study.",
   "environment": {
     "node": "v22.23.2",
@@ -9,7 +9,7 @@
   },
   "implementationSha256": {
     "src/analyzer.ts": "746a6dd0df3c2d9a183fcc116f457e39021038a8c4a24ca214fb9554bcccbcc9",
-    "src/git.ts": "c8cf60d5b92c63925f284c1b3456d640f3783be2c0e53b3129dcc625f7dd5465",
+    "src/git.ts": "bc76dd0a028405bea0364807c7932d70deb4ec7f703fd1e152bf7871e114692c",
     "src/model.ts": "cddb8824451ead7f2fb56853ab8cd5c09c27402af75a139f1b60cf150a298fdc",
     "src/cli.ts": "9262fd9f04464ad75de01c8c9e02a626d83a29b01f169f4fb1bdae057e743acd",
     "src/github.ts": "f05f13a3d6c7bb08bb96f93bbfae6d86237e01164ef0da42e3c2af27b6e5c329",
@@ -38,8 +38,8 @@
         "repository": "honojs/hono",
         "prNumber": 5547,
         "mergeBase": "6465a911be840036bedb437d043ffb23faf37a3d",
-        "analyzeMs": 3648,
-        "durationMs": 3806,
+        "analyzeMs": 3075,
+        "durationMs": 3213,
         "changedFiles": 5,
         "hunks": 14,
         "edits": 79,
@@ -67,8 +67,8 @@
         "repository": "honojs/hono",
         "prNumber": 5536,
         "mergeBase": "cc92a59f60caf7fe4f61cd01d0d6afb66426c6ae",
-        "analyzeMs": 2565,
-        "durationMs": 2699,
+        "analyzeMs": 2259,
+        "durationMs": 2360,
         "changedFiles": 3,
         "hunks": 8,
         "edits": 142,
@@ -95,8 +95,8 @@
         "repository": "colinhacks/zod",
         "prNumber": 6587,
         "mergeBase": "a00c3f348abb8b56ccb6281ac4c946141e2728d5",
-        "analyzeMs": 4398,
-        "durationMs": 4814,
+        "analyzeMs": 3889,
+        "durationMs": 4120,
         "changedFiles": 5,
         "hunks": 9,
         "edits": 126,
@@ -124,8 +124,8 @@
         "repository": "excalidraw/excalidraw",
         "prNumber": 12260,
         "mergeBase": "e65eca999e071503efb893d3379a29fb96ff37c4",
-        "analyzeMs": 12551,
-        "durationMs": 13852,
+        "analyzeMs": 9292,
+        "durationMs": 10262,
         "changedFiles": 9,
         "hunks": 30,
         "edits": 975,
@@ -155,8 +155,8 @@
         "repository": "nestjs/nest",
         "prNumber": 18064,
         "mergeBase": "0498c13a63239fdef2d964acee67b57a22f87c65",
-        "analyzeMs": 8315,
-        "durationMs": 8823,
+        "analyzeMs": 7902,
+        "durationMs": 8301,
         "changedFiles": 76,
         "hunks": 223,
         "edits": 398,
@@ -181,8 +181,8 @@
         "repository": "TanStack/query",
         "prNumber": 11711,
         "mergeBase": "3ae9fb0c3c9145ae9335082299719d6bb0d39137",
-        "analyzeMs": 6815,
-        "durationMs": 7209,
+        "analyzeMs": 6946,
+        "durationMs": 7349,
         "changedFiles": 14,
         "hunks": 28,
         "edits": 124,
@@ -316,7 +316,7 @@
       "mergeCommitOid": "b0d28c42987c0c8a4e3c99cdbbbb57450e06dfda",
       "mergeBase": "6465a911be840036bedb437d043ffb23faf37a3d",
       "localClone": "tmp/real-pr-validation/hono",
-      "durationMs": 3589,
+      "durationMs": 3128,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -472,7 +472,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 22
+        "durationMs": 24
       },
       "resolvedLinkSourceChecks": {
         "checked": 2,
@@ -525,7 +525,7 @@
       "mergeCommitOid": "5c292393f21e1693b54a6081491e4e83215d02ea",
       "mergeBase": "cc92a59f60caf7fe4f61cd01d0d6afb66426c6ae",
       "localClone": "tmp/real-pr-validation/hono",
-      "durationMs": 2838,
+      "durationMs": 2303,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -650,7 +650,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 23
+        "durationMs": 20
       },
       "resolvedLinkSourceChecks": {
         "checked": 0,
@@ -673,7 +673,7 @@
       "mergeCommitOid": "9446b5cc14c5bf137790f1f66abf602044871223",
       "mergeBase": "a00c3f348abb8b56ccb6281ac4c946141e2728d5",
       "localClone": "tmp/real-pr-validation/zod",
-      "durationMs": 4396,
+      "durationMs": 4235,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -829,7 +829,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 18
+        "durationMs": 17
       },
       "resolvedLinkSourceChecks": {
         "checked": 55,
@@ -1524,7 +1524,7 @@
       "mergeCommitOid": "ef53e5417b2df6b2b8663e385bb8b9a39fea8428",
       "mergeBase": "e65eca999e071503efb893d3379a29fb96ff37c4",
       "localClone": "tmp/real-pr-validation/excalidraw",
-      "durationMs": 9906,
+      "durationMs": 9638,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -5606,7 +5606,7 @@
       "mergeCommitOid": "2731c18054fb348779311d81e4e20949e313be78",
       "mergeBase": "0498c13a63239fdef2d964acee67b57a22f87c65",
       "localClone": "tmp/real-pr-validation/nest",
-      "durationMs": 8277,
+      "durationMs": 7990,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -6824,7 +6824,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 23
+        "durationMs": 25
       },
       "resolvedLinkSourceChecks": {
         "checked": 35,
@@ -7268,7 +7268,7 @@
       "mergeCommitOid": "a94c7caeec624d0714ee00be3a703943ec2ddbeb",
       "mergeBase": "3ae9fb0c3c9145ae9335082299719d6bb0d39137",
       "localClone": "tmp/real-pr-validation/query",
-      "durationMs": 6839,
+      "durationMs": 6955,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -7556,7 +7556,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 23
+        "durationMs": 24
       },
       "resolvedLinkSourceChecks": {
         "checked": 2,
@@ -8176,8 +8176,8 @@
     {
       "repository": "honojs/hono",
       "prNumber": 5547,
-      "artifactSha256": "187ffc94f51fdc73ee948f28b9a0f9bdcc584c875baa7230f7f2f13a7badd7a9",
-      "loadAndRenderMs": 287,
+      "artifactSha256": "6a772191b3137356c6e055b2579b1f4af59f5eaabaaa58f7147904d8a7c245c3",
+      "loadAndRenderMs": 208,
       "titleMatches": true,
       "ledgerFiles": 5,
       "rawPath": "src/router/common.case.test.ts",
@@ -8192,8 +8192,8 @@
     {
       "repository": "honojs/hono",
       "prNumber": 5536,
-      "artifactSha256": "07295d869fd8340ea330dd207cff146d0d7ec0ccd1b1fbe05963f660c22a5464",
-      "loadAndRenderMs": 148,
+      "artifactSha256": "10c323b023ca3c695298b1a6fac7156075c94dd91c00cb80c02093f2aacc5421",
+      "loadAndRenderMs": 144,
       "titleMatches": true,
       "ledgerFiles": 3,
       "rawPath": "runtime-tests/bun/index.test.tsx",
@@ -8208,8 +8208,8 @@
     {
       "repository": "colinhacks/zod",
       "prNumber": 6587,
-      "artifactSha256": "e324f4dbc70008b9c467f4e9ed2a1f35e0ebe135d78e5c3a0887650419e6cced",
-      "loadAndRenderMs": 188,
+      "artifactSha256": "52c6e817683762e5bddd76188e0e94c0fe889143ed7eb25689104246055cc8c7",
+      "loadAndRenderMs": 186,
       "titleMatches": true,
       "ledgerFiles": 5,
       "rawPath": "packages/zod/src/v4/classic/tests/prefault.test.ts",
@@ -8224,8 +8224,8 @@
     {
       "repository": "excalidraw/excalidraw",
       "prNumber": 12260,
-      "artifactSha256": "2db398b451b3c961c356ffa032db33b2821375ca4585ddcf6aa09328ece983be",
-      "loadAndRenderMs": 307,
+      "artifactSha256": "df79db905dedac6b9e48a81844ba6629fd800f51c1102889d239b5ef6eb84cb5",
+      "loadAndRenderMs": 302,
       "titleMatches": true,
       "ledgerFiles": 9,
       "rawPath": "packages/element/src/cropElement.ts",
@@ -8240,8 +8240,8 @@
     {
       "repository": "nestjs/nest",
       "prNumber": 18064,
-      "artifactSha256": "318f2580ac0203a1044cb57ed398486998cde327118e9c44c0bce18c20278a8f",
-      "loadAndRenderMs": 232,
+      "artifactSha256": "e370fbdc22abed8f57b3fe44ef2f998fdf478f3774d23240ea3e2cb856fb7b12",
+      "loadAndRenderMs": 227,
       "titleMatches": true,
       "ledgerFiles": 76,
       "rawPath": "integration/_support/listen-on-loopback.ts",
@@ -8256,8 +8256,8 @@
     {
       "repository": "TanStack/query",
       "prNumber": 11711,
-      "artifactSha256": "a60d744e0208336597a5efb392d56fa054da609012f13869e19a8ac7735b2a36",
-      "loadAndRenderMs": 280,
+      "artifactSha256": "dff15eb91842dd837505e21c10db4d1462a7f5129795f9d6d154ee195dfda938",
+      "loadAndRenderMs": 273,
       "titleMatches": true,
       "ledgerFiles": 14,
       "rawPath": ".changeset/preact-v11-peer-dependency.md",
@@ -8271,6 +8271,11 @@
     }
   ],
   "findings": [
+    {
+      "id": "git-path-and-bom-bytes",
+      "status": "resolved-and-covered-by-adversarial-suite",
+      "description": "Final release review found that lossy UTF8path decoding could silently misname entries; Git inventory/tree paths now use fatalUTF8 decoding and refuse unsupported filename bytes. Blob decoding preserves an initial UTF8BOM. The separate adversarial suite covers changed/unchanged invalid-byte filenames and BOM snapshot/edit preservation; public samples are unaffected."
+    },
     {
       "id": "native-git-ledger",
       "status": "resolved-and-reverified",

@@ -7,6 +7,10 @@ interface Entry { mode: string; type: string; oid: string; path: string }
 interface Change { modeOld: string; modeNew: string; status: string; path: string; oldPath?: string }
 const MAX_BYTES = 48 * 1024 * 1024;
 const MAX_BLOB = 8 * 1024 * 1024;
+function inventoryText(bytes: Buffer): string {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { throw new Error('Git inventory contains a filename that is not valid UTF-8. No report was generated; byte-encoded filenames are not supported.'); }
+}
 function git(repo: string, args: string[], input?: string, trustedLazyFetch = false): Buffer {
   try {
     return execFileSync('git', ['-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', '-c', 'diff.suppressBlankEmpty=false', '-c', 'diff.relative=false', '--no-replace-objects', ...(trustedLazyFetch ? [] : ['--no-lazy-fetch']), '--literal-pathspecs', '--no-pager', '-C', repo, ...args], {
@@ -39,14 +43,14 @@ function revision(repo: string, ref: string): string {
   return git(repo, ['rev-parse', '--verify', '--end-of-options', `${ref}^{commit}`]).toString().trim();
 }
 function tree(repo: string, rev: string): Map<string, Entry> {
-  return new Map(git(repo, ['ls-tree', '-r', '-z', rev]).toString().split('\0').filter(Boolean).map(row => {
+  return new Map(inventoryText(git(repo, ['ls-tree', '-r', '-z', rev])).split('\0').filter(Boolean).map(row => {
     const tab = row.indexOf('\t');
     const [mode, type, oid] = row.slice(0, tab).split(' '), file = row.slice(tab + 1);
     return [file, { mode, type, oid, path: file }];
   }));
 }
 function changes(repo: string, base: string, head: string): Change[] {
-  const fields = git(repo, ['diff', '--raw', '-z', '-M', '--ignore-submodules=none', '--no-ext-diff', '--no-textconv', base, head, '--']).toString().split('\0');
+  const fields = inventoryText(git(repo, ['diff', '--raw', '-z', '-M', '--ignore-submodules=none', '--no-ext-diff', '--no-textconv', base, head, '--'])).split('\0');
   const result: Change[] = [];
   for (let i = 0; i < fields.length && fields[i];) {
     const metadata = fields[i++].slice(1).split(' '), first = fields[i++];
@@ -78,7 +82,7 @@ function acquire(repo: string, entries: Map<string, Entry>, wanted: Set<string>,
     const bytes = raw.subarray(end + 1, end + 1 + size);
     if (bytes.length !== size) throw new Error('Git object content was truncated.');
     let content: string;
-    try { content = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { content = '\0'; }
+    try { content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); } catch { content = '\0'; }
     decoded.set(oid, content);
     offset = end + 1 + size + 1;
   }
