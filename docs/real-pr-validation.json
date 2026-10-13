@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-10-12T05:04:41.850Z",
+  "recordedAt": "2026-10-13T19:36:23.712Z",
   "scope": "Real public PR snapshot validation and static navigation census; not a human comprehension study.",
   "environment": {
     "node": "v22.23.2",
@@ -11,26 +11,24 @@
     "src/analyzer.ts": "746a6dd0df3c2d9a183fcc116f457e39021038a8c4a24ca214fb9554bcccbcc9",
     "src/git.ts": "bc76dd0a028405bea0364807c7932d70deb4ec7f703fd1e152bf7871e114692c",
     "src/model.ts": "cddb8824451ead7f2fb56853ab8cd5c09c27402af75a139f1b60cf150a298fdc",
-    "src/cli.ts": "9262fd9f04464ad75de01c8c9e02a626d83a29b01f169f4fb1bdae057e743acd",
+    "src/cli.ts": "9681ccfaeed71d27466057c1ba306b97d7dbcf4df77ed6dbff0515e29527bc3d",
     "src/github.ts": "f05f13a3d6c7bb08bb96f93bbfae6d86237e01164ef0da42e3c2af27b6e5c329",
-    "src/render.ts": "e9b54791c7b6170ee20a89a39308457aac782ae2e340cfc82a88ad59379ff615",
-    "src/validate.ts": "7763ace7c89be8f30bf6b50acc4460a44ab7751672fd4b393067f58b1378d67d",
-    "src/web/main.tsx": "42593810be53d6441c76871662cfcf2c94b8951a709bb6652c26c8bc29437837",
-    "src/web/styles.css": "4de7e0cf92e38bd8ebb7bdfa3e5ffe99eabc7eaa6c58cc1702ac9ac3174e2012",
-    "dist/web/client.js": "dcd566e99e5f95ac67f869e3492b525e0693e62bc94765069ecc2a3b35f05119",
-    "dist/web/client.css": "bfb73db457d0c9a37ac54ef0d40d3112d3f0a7be29ea66a2716760f0e702d3bd"
+    "src/render.ts": "1c0c3aca21949cb09e554d4d61a3a6b13635ab8de353c6c422e2775191e54f0e",
+    "src/validate.ts": "a86e379aad5e6e4238d65aa26cb6ee9dfa6bb3c77893c97c1d39ac4465bec8d9"
   },
   "renderImplementationSha256": {
-    "src/render.ts": "e9b54791c7b6170ee20a89a39308457aac782ae2e340cfc82a88ad59379ff615",
-    "src/validate.ts": "7763ace7c89be8f30bf6b50acc4460a44ab7751672fd4b393067f58b1378d67d",
-    "src/web/main.tsx": "42593810be53d6441c76871662cfcf2c94b8951a709bb6652c26c8bc29437837",
-    "src/web/styles.css": "4de7e0cf92e38bd8ebb7bdfa3e5ffe99eabc7eaa6c58cc1702ac9ac3174e2012",
-    "dist/web/client.js": "dcd566e99e5f95ac67f869e3492b525e0693e62bc94765069ecc2a3b35f05119",
-    "dist/web/client.css": "bfb73db457d0c9a37ac54ef0d40d3112d3f0a7be29ea66a2716760f0e702d3bd"
+    "src/render.ts": "1c0c3aca21949cb09e554d4d61a3a6b13635ab8de353c6c422e2775191e54f0e",
+    "src/validate.ts": "a86e379aad5e6e4238d65aa26cb6ee9dfa6bb3c77893c97c1d39ac4465bec8d9",
+    "src/web/main.tsx": "34dd0697ff530579b3bafa9444c0632fd8a0085bee51ba924586394ced0d0ee5",
+    "src/web/styles.css": "305e16774403ef7a41d1ff2fb2c66212610fe44e9a6f509663a6f8ea499b1f86",
+    "src/web/icons.ts": "2cabf7b18cf38b4c552525abf3a5705deb46e19726eb660926686df9009df559",
+    "scripts/build-site.mjs": "58d96a145c98f4c18c38870d3f557eada8722277898e780efeaa95644ec2c46f",
+    "dist/web/client.js": "5875bc01103237f4a0d9dfb1eb7f2cc46436f6c64c952ddbfb2612d8ef335c29",
+    "dist/web/client.css": "d182ae5401ff1531b26f08b43531a069f47eebc18d6cc94c6abc867329bd6c55"
   },
   "replayRunner": {
     "path": "scripts/validate-real-prs.mjs",
-    "sha256": "c43baee92a9de1c853d8aeaba71f63fbc585e9ed85103f89dc3c283556ccdee2",
+    "sha256": "ea03e20b32def6c338961275d8e2e40b781823dd87b38dd5117f82d6bebd823c",
     "node": "v22.23.2",
     "allSixCasesPassed": true,
     "results": [
@@ -38,8 +36,8 @@
         "repository": "honojs/hono",
         "prNumber": 5547,
         "mergeBase": "6465a911be840036bedb437d043ffb23faf37a3d",
-        "analyzeMs": 3075,
-        "durationMs": 3213,
+        "analyzeMs": 2912,
+        "durationMs": 3043,
         "changedFiles": 5,
         "hunks": 14,
         "edits": 79,
@@ -67,8 +65,8 @@
         "repository": "honojs/hono",
         "prNumber": 5536,
         "mergeBase": "cc92a59f60caf7fe4f61cd01d0d6afb66426c6ae",
-        "analyzeMs": 2259,
-        "durationMs": 2360,
+        "analyzeMs": 2021,
+        "durationMs": 2122,
         "changedFiles": 3,
         "hunks": 8,
         "edits": 142,
@@ -95,8 +93,8 @@
         "repository": "colinhacks/zod",
         "prNumber": 6587,
         "mergeBase": "a00c3f348abb8b56ccb6281ac4c946141e2728d5",
-        "analyzeMs": 3889,
-        "durationMs": 4120,
+        "analyzeMs": 3457,
+        "durationMs": 3702,
         "changedFiles": 5,
         "hunks": 9,
         "edits": 126,
@@ -124,8 +122,8 @@
         "repository": "excalidraw/excalidraw",
         "prNumber": 12260,
         "mergeBase": "e65eca999e071503efb893d3379a29fb96ff37c4",
-        "analyzeMs": 9292,
-        "durationMs": 10262,
+        "analyzeMs": 9143,
+        "durationMs": 10062,
         "changedFiles": 9,
         "hunks": 30,
         "edits": 975,
@@ -155,8 +153,8 @@
         "repository": "nestjs/nest",
         "prNumber": 18064,
         "mergeBase": "0498c13a63239fdef2d964acee67b57a22f87c65",
-        "analyzeMs": 7902,
-        "durationMs": 8301,
+        "analyzeMs": 7565,
+        "durationMs": 7973,
         "changedFiles": 76,
         "hunks": 223,
         "edits": 398,
@@ -181,8 +179,8 @@
         "repository": "TanStack/query",
         "prNumber": 11711,
         "mergeBase": "3ae9fb0c3c9145ae9335082299719d6bb0d39137",
-        "analyzeMs": 6946,
-        "durationMs": 7349,
+        "analyzeMs": 5759,
+        "durationMs": 6075,
         "changedFiles": 14,
         "hunks": 28,
         "edits": 124,
@@ -206,6 +204,8 @@
     ]
   },
   "selection": {
+    "samplingDate": "2026-10-12",
+    "currentRun": "Replays the same pinned samples; does not resample the latest PRs on the current date.",
     "initial": "First three selected modest Hono/Zod behavior changes; purposive examples.",
     "extensionRule": "One latest merged PR touching at least5 non-declaration TS/TSX files from each of Excalidraw, Nest, TanStack Query. Seed latest50 listed PRs; query all merged since seed date, sort mergedAt descending, choose first qualifying PR. Selection is independent of analyzer output.",
     "extensionEvidence": [
@@ -316,7 +316,7 @@
       "mergeCommitOid": "b0d28c42987c0c8a4e3c99cdbbbb57450e06dfda",
       "mergeBase": "6465a911be840036bedb437d043ffb23faf37a3d",
       "localClone": "tmp/real-pr-validation/hono",
-      "durationMs": 3128,
+      "durationMs": 3070,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -472,7 +472,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 24
+        "durationMs": 20
       },
       "resolvedLinkSourceChecks": {
         "checked": 2,
@@ -525,7 +525,7 @@
       "mergeCommitOid": "5c292393f21e1693b54a6081491e4e83215d02ea",
       "mergeBase": "cc92a59f60caf7fe4f61cd01d0d6afb66426c6ae",
       "localClone": "tmp/real-pr-validation/hono",
-      "durationMs": 2303,
+      "durationMs": 2110,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -650,7 +650,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 20
+        "durationMs": 18
       },
       "resolvedLinkSourceChecks": {
         "checked": 0,
@@ -673,7 +673,7 @@
       "mergeCommitOid": "9446b5cc14c5bf137790f1f66abf602044871223",
       "mergeBase": "a00c3f348abb8b56ccb6281ac4c946141e2728d5",
       "localClone": "tmp/real-pr-validation/zod",
-      "durationMs": 4235,
+      "durationMs": 3702,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -829,7 +829,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 17
+        "durationMs": 15
       },
       "resolvedLinkSourceChecks": {
         "checked": 55,
@@ -1524,7 +1524,7 @@
       "mergeCommitOid": "ef53e5417b2df6b2b8663e385bb8b9a39fea8428",
       "mergeBase": "e65eca999e071503efb893d3379a29fb96ff37c4",
       "localClone": "tmp/real-pr-validation/excalidraw",
-      "durationMs": 9638,
+      "durationMs": 9019,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -1742,7 +1742,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 61
+        "durationMs": 55
       },
       "resolvedLinkSourceChecks": {
         "checked": 320,
@@ -5606,7 +5606,7 @@
       "mergeCommitOid": "2731c18054fb348779311d81e4e20949e313be78",
       "mergeBase": "0498c13a63239fdef2d964acee67b57a22f87c65",
       "localClone": "tmp/real-pr-validation/nest",
-      "durationMs": 7990,
+      "durationMs": 7457,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -6824,7 +6824,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 25
+        "durationMs": 22
       },
       "resolvedLinkSourceChecks": {
         "checked": 35,
@@ -7268,7 +7268,7 @@
       "mergeCommitOid": "a94c7caeec624d0714ee00be3a703943ec2ddbeb",
       "mergeBase": "3ae9fb0c3c9145ae9335082299719d6bb0d39137",
       "localClone": "tmp/real-pr-validation/query",
-      "durationMs": 6955,
+      "durationMs": 6369,
       "outcome": "analyzed",
       "inventoryMatchesGit": true,
       "githubFiles": [
@@ -7556,7 +7556,7 @@
       },
       "importValidatorCheck": {
         "passed": true,
-        "durationMs": 24
+        "durationMs": 21
       },
       "resolvedLinkSourceChecks": {
         "checked": 2,
@@ -8136,55 +8136,33 @@
   ],
   "browser": {
     "case": "colinhacks/zod#6587",
-    "nestedCards": 2,
+    "oldTarget": true,
+    "newTarget": true,
+    "peekCount": 1,
+    "callerVisibleAfterOld": true,
+    "callerVisibleAfterNew": true,
+    "closed": true,
     "rawHunks": 3,
-    "beforeLines": 2300,
     "errors": [],
     "externalRequests": [],
-    "requests": [
-      "local generated report"
-    ],
     "passed": true
   },
-  "additionalBrowserChecks": [
-    {
-      "pr": "honojs/hono#5547",
-      "loadAndRenderMs": 363,
-      "opened": "runTest",
-      "callRows": 2387,
-      "rawPath": "src/router/reg-exp-router/node.ts",
-      "rawHunks": 3,
-      "ledgerFiles": 5,
-      "errors": [],
-      "externalRequests": [],
-      "passed": true
-    },
-    {
-      "pr": "honojs/hono#5536",
-      "loadAndRenderMs": 269,
-      "opened": "HonoRequest.json",
-      "callRows": 4,
-      "rawPath": "src/request.ts",
-      "rawHunks": 5,
-      "ledgerFiles": 3,
-      "errors": [],
-      "externalRequests": [],
-      "passed": true
-    }
-  ],
   "finalBrowserChecks": [
     {
       "repository": "honojs/hono",
       "prNumber": 5547,
-      "artifactSha256": "6a772191b3137356c6e055b2579b1f4af59f5eaabaaa58f7147904d8a7c245c3",
-      "loadAndRenderMs": 208,
-      "titleMatches": true,
-      "ledgerFiles": 5,
+      "artifactSha256": "95647dd3e061fb41e9fee12bb4ecde8b688b1e46eb07c15834510cb8b752e649",
+      "loadAndRenderMs": 234,
+      "navigationCount": 1,
+      "fileCount": 5,
       "rawPath": "src/router/common.case.test.ts",
       "rawHunks": 5,
       "expectedHunks": 5,
+      "splitViews": 5,
+      "splitBeforeRows": 30,
+      "splitAfterRows": 55,
       "importedPR": "honojs/hono#5536",
-      "importedLedgerFiles": 3,
+      "importedFileCount": 3,
       "errors": [],
       "externalRequests": [],
       "passed": true
@@ -8192,15 +8170,18 @@
     {
       "repository": "honojs/hono",
       "prNumber": 5536,
-      "artifactSha256": "10c323b023ca3c695298b1a6fac7156075c94dd91c00cb80c02093f2aacc5421",
-      "loadAndRenderMs": 144,
-      "titleMatches": true,
-      "ledgerFiles": 3,
+      "artifactSha256": "c11946be2f736ca0a59ec2109788f4056e81b9e587486a10cae42e403ebf1fe9",
+      "loadAndRenderMs": 138,
+      "navigationCount": 1,
+      "fileCount": 3,
       "rawPath": "runtime-tests/bun/index.test.tsx",
       "rawHunks": 1,
       "expectedHunks": 1,
+      "splitViews": 1,
+      "splitBeforeRows": 3,
+      "splitAfterRows": 17,
       "importedPR": "colinhacks/zod#6587",
-      "importedLedgerFiles": 5,
+      "importedFileCount": 5,
       "errors": [],
       "externalRequests": [],
       "passed": true
@@ -8208,15 +8189,18 @@
     {
       "repository": "colinhacks/zod",
       "prNumber": 6587,
-      "artifactSha256": "52c6e817683762e5bddd76188e0e94c0fe889143ed7eb25689104246055cc8c7",
-      "loadAndRenderMs": 186,
-      "titleMatches": true,
-      "ledgerFiles": 5,
+      "artifactSha256": "088af2e65311b939193a50e399e65df1514d9a83cf0084ad89aea86f8d25ac9a",
+      "loadAndRenderMs": 173,
+      "navigationCount": 1,
+      "fileCount": 5,
       "rawPath": "packages/zod/src/v4/classic/tests/prefault.test.ts",
       "rawHunks": 1,
       "expectedHunks": 1,
+      "splitViews": 1,
+      "splitBeforeRows": 6,
+      "splitAfterRows": 76,
       "importedPR": "excalidraw/excalidraw#12260",
-      "importedLedgerFiles": 9,
+      "importedFileCount": 9,
       "errors": [],
       "externalRequests": [],
       "passed": true
@@ -8224,15 +8208,18 @@
     {
       "repository": "excalidraw/excalidraw",
       "prNumber": 12260,
-      "artifactSha256": "df79db905dedac6b9e48a81844ba6629fd800f51c1102889d239b5ef6eb84cb5",
-      "loadAndRenderMs": 302,
-      "titleMatches": true,
-      "ledgerFiles": 9,
+      "artifactSha256": "be55c762dfb832a99d9c75b4923f7cd903f68491d10edb071f3756cab22d0000",
+      "loadAndRenderMs": 271,
+      "navigationCount": 1,
+      "fileCount": 9,
       "rawPath": "packages/element/src/cropElement.ts",
       "rawHunks": 2,
       "expectedHunks": 2,
+      "splitViews": 2,
+      "splitBeforeRows": 473,
+      "splitAfterRows": 204,
       "importedPR": "nestjs/nest#18064",
-      "importedLedgerFiles": 76,
+      "importedFileCount": 76,
       "errors": [],
       "externalRequests": [],
       "passed": true
@@ -8240,15 +8227,18 @@
     {
       "repository": "nestjs/nest",
       "prNumber": 18064,
-      "artifactSha256": "e370fbdc22abed8f57b3fe44ef2f998fdf478f3774d23240ea3e2cb856fb7b12",
-      "loadAndRenderMs": 227,
-      "titleMatches": true,
-      "ledgerFiles": 76,
+      "artifactSha256": "0c44fa96dc2104fe9812d612ced98e8ed9f993c081038208f4abbfdd573555a4",
+      "loadAndRenderMs": 214,
+      "navigationCount": 1,
+      "fileCount": 76,
       "rawPath": "integration/_support/listen-on-loopback.ts",
       "rawHunks": 1,
       "expectedHunks": 1,
+      "splitViews": 1,
+      "splitBeforeRows": 0,
+      "splitAfterRows": 18,
       "importedPR": "TanStack/query#11711",
-      "importedLedgerFiles": 14,
+      "importedFileCount": 14,
       "errors": [],
       "externalRequests": [],
       "passed": true
@@ -8256,21 +8246,144 @@
     {
       "repository": "TanStack/query",
       "prNumber": 11711,
-      "artifactSha256": "dff15eb91842dd837505e21c10db4d1462a7f5129795f9d6d154ee195dfda938",
-      "loadAndRenderMs": 273,
-      "titleMatches": true,
-      "ledgerFiles": 14,
+      "artifactSha256": "e9f10abbba4ad4512c0e016c6bf97141a6740fa3e5bf75f2d2daef3e77a4d0b6",
+      "loadAndRenderMs": 254,
+      "navigationCount": 1,
+      "fileCount": 14,
       "rawPath": ".changeset/preact-v11-peer-dependency.md",
       "rawHunks": 1,
       "expectedHunks": 1,
+      "splitViews": 1,
+      "splitBeforeRows": 0,
+      "splitAfterRows": 7,
       "importedPR": "honojs/hono#5547",
-      "importedLedgerFiles": 5,
+      "importedFileCount": 5,
       "errors": [],
       "externalRequests": [],
       "passed": true
     }
   ],
+  "hostedBrowserCheck": {
+    "url": "http://127.0.0.1:4173/",
+    "noReportPayload": true,
+    "demoPayload": true,
+    "initialNavigator": 0,
+    "imports": [
+      {
+        "repository": "honojs/hono",
+        "prNumber": 5547,
+        "fileCount": 5,
+        "expectedFiles": 5,
+        "passed": true
+      },
+      {
+        "repository": "honojs/hono",
+        "prNumber": 5536,
+        "fileCount": 3,
+        "expectedFiles": 3,
+        "passed": true
+      },
+      {
+        "repository": "colinhacks/zod",
+        "prNumber": 6587,
+        "fileCount": 5,
+        "expectedFiles": 5,
+        "passed": true
+      },
+      {
+        "repository": "excalidraw/excalidraw",
+        "prNumber": 12260,
+        "fileCount": 9,
+        "expectedFiles": 9,
+        "passed": true
+      },
+      {
+        "repository": "nestjs/nest",
+        "prNumber": 18064,
+        "fileCount": 76,
+        "expectedFiles": 76,
+        "passed": true
+      },
+      {
+        "repository": "TanStack/query",
+        "prNumber": 11711,
+        "fileCount": 14,
+        "expectedFiles": 14,
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "requests": [
+      {
+        "method": "GET",
+        "url": "http://127.0.0.1:4173/",
+        "hasBody": false
+      }
+    ],
+    "sourceSent": false,
+    "foreignRequests": [],
+    "passed": true
+  },
+  "publicDistribution": {
+    "archiveSha256": "27b6396c8b752fe0b4e4a8d687214dcc06443da96c399e9dd02f89ccf7971b1a",
+    "entries": [
+      "package",
+      "package/README.txt",
+      "package/THIRD-PARTY-NOTICES.txt",
+      "package/dist",
+      "package/dist/cli.js",
+      "package/dist/web",
+      "package/dist/web/client.css",
+      "package/dist/web/client.js",
+      "package/package.json"
+    ],
+    "exactAllowlist": true,
+    "memberCount": 9,
+    "invalidEntries": [],
+    "manifest": {
+      "name": "flow-review",
+      "version": "0.1.0",
+      "description": "Follow changed TypeScript code across a pull request, with a complete change ledger.",
+      "type": "module",
+      "bin": {
+        "flow-review": "dist/cli.js"
+      },
+      "engines": {
+        "node": ">=22"
+      }
+    },
+    "noticeCoverage": {
+      "typescript 6.0.2": true,
+      "diff 9.0.0": true,
+      "react 19.3.0": true,
+      "react-dom 19.3.0": true,
+      "scheduler 0.28.0": true,
+      "@phosphor-icons/react 2.1.10": true
+    },
+    "hasInstallScripts": false,
+    "hasDependencies": false,
+    "passed": true,
+    "isolatedSmoke": {
+      "node": "v22.23.2",
+      "passed": true,
+      "files": 6,
+      "hunks": 6,
+      "standaloneHtmlBytes": 353646,
+      "demoMarked": true,
+      "clearedNodePath": true
+    }
+  },
   "findings": [
+    {
+      "id": "import-count-and-opaque-conflict",
+      "status": "resolved-and-covered-by-adversarial-suite",
+      "description": "Hosted-release review proved imported file numstats could disagree with actual hunk edits and binary flags could hide retained text hunks. Validator now rejects count mismatches and opaque files containing text/hunks; generated real reports remain valid."
+    },
+    {
+      "id": "package-metadata-and-attribution",
+      "status": "resolved-and-reverified",
+      "description": "Raw archive inspection detects AppleDouble entries hidden by BSDtar display; COPYFILE_DISABLE=1 eliminates them. Scheduler bundled browser code now has its license included. Final Python inventory and isolated Node22 smoke pass."
+    },
     {
       "id": "git-path-and-bom-bytes",
       "status": "resolved-and-covered-by-adversarial-suite",

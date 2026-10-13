@@ -1,0 +1,77 @@
+{
+  "recorded_date": "2026-10-13",
+  "status": "option_1_implemented_verified_deployed",
+  "reference": {
+    "path": "reports/screenshots/reader-release.png",
+    "user_selected": true,
+    "fresh_audit_capture": false
+  },
+  "claude": {
+    "chat": "https://claude.ai/chat/a625da78-75f1-47da-bd52-7fc6ea22d08e",
+    "round": 3,
+    "receipt": "Observed Message5 and completed Message6; composer empty; Claude finished response",
+    "review_scope": "Source-described product/workflow critique; no screenshot supplied to Claude"
+  },
+  "job": "Read a multi-file TypeScript PR, follow relevant dependencies, return to the exact reading position, explicitly track all remaining changes",
+  "priorities": [
+    "One complete navigator rather than duplicate symbol lists and a competing file rail",
+    "Dominant readable code surface with secondary details disclosed on demand",
+    "One peek or stable caller/callee panes, no recursive card nesting",
+    "Uncertainty signals remain visible where applicable; explanatory paragraphs move behind details",
+    "Keyboard and pointer workflows, stable scroll/focus and explicit completion handoff"
+  ],
+  "must_preserve": [
+    "Full original Git change inventory including metadata/non-code/deleted files",
+    "Before/head source links and removed calls",
+    "No invented targets, defect verdicts, or review credit from opening source",
+    "Canonical snapshot-scoped review state",
+    "Offline operation and source privacy"
+  ],
+  "directions": [
+    {
+      "displayed_option": 1,
+      "image": "concepts/01-focused-review-desk.png",
+      "name": "Focused review desk"
+    },
+    {
+      "displayed_option": 2,
+      "image": "concepts/02-linked-code-workbench.png",
+      "name": "Linked code workbench"
+    },
+    {
+      "displayed_option": 3,
+      "image": "concepts/03-guided-change-review.png",
+      "name": "Guided change review"
+    }
+  ],
+  "implementation_notes": [
+    "Visual options are mockups, not functioning builds",
+    "Generated code snippets, paths and counts are illustrative; implementation must use verified report data rather than copy mock text",
+    "Inline link positioning must be backed by actual source coordinates; do not guess ambiguous token spans",
+    "Performance and human value targets require measurement, not claims"
+  ],
+  "sources": [
+    {
+      "url": "https://www.nngroup.com/articles/progressive-disclosure/",
+      "role": "Secondary-detail disclosure principle"
+    },
+    {
+      "url": "https://code.visualstudio.com/docs/editing/editingevolved",
+      "role": "Context-preserving code peek pattern"
+    },
+    {
+      "url": "https://graphite.com/features",
+      "role": "Official workflow reference for keyboard interaction and integrated review state"
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.32057",
+      "role": "Primary abstract reports repeated-function disorientation and less apparent off-function edits; no efficacy claim for Flow Review"
+    }
+  ],
+  "commercial_hypothesis": "Reviewers may pay if the tool improves correct behavior understanding and is reused in actual work; willingness to pay is unmeasured",
+  "next_action": "Observe real reviewer use and measure usefulness before commercial claims",
+  "selected_option": 1,
+  "release_architecture": "Local analyzer plus static online reader on Vercel",
+  "qa": "../../design-qa.md",
+  "production_url": "https://flow-review-two.vercel.app"
+}

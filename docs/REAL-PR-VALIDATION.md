@@ -1,6 +1,6 @@
 # Real PR validation
 
-Flow Review was run against pinned, merged public TypeScript PRs. These checks validate acquisition, edit accounting, a subset of source navigation, and automated offline reader interactions. They do not establish faster reviews or better defect detection. The machine-readable record is [real-pr-validation.json](real-pr-validation.json).
+Flow Review was run against pinned, merged public TypeScript PRs. The October 12, 2026 sample selection is replayed for this release; these are not newly sampled latest PRs. These checks validate acquisition, edit accounting, a subset of source navigation, and automated offline reader interactions. They do not establish faster reviews or better defect detection. The machine-readable record is [real-pr-validation.json](real-pr-validation.json).
 
 ## Selection and results
 
@@ -10,12 +10,12 @@ Times are single local analyzer runs, excluding cloning, fetching, HTML generati
 
 | PR | Files | Hunks | Added / deleted lines | Analyze time | Resolved / unresolved calls | Peek share |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [honojs/hono #5547](https://github.com/honojs/hono/pull/5547) | 5 | 14 | 63 / 16 | 3128 ms | 2 / 2411 | 0.1% |
-| [honojs/hono #5536](https://github.com/honojs/hono/pull/5536) | 3 | 8 | 113 / 29 | 2303 ms | 0 / 13 | 0.0% |
-| [colinhacks/zod #6587](https://github.com/colinhacks/zod/pull/6587) | 5 | 9 | 110 / 16 | 4235 ms | 55 / 126 | 30.4% |
-| [excalidraw/excalidraw #12260](https://github.com/excalidraw/excalidraw/pull/12260) | 9 | 30 | 477 / 498 | 9638 ms | 320 / 473 | 40.4% |
-| [nestjs/nest #18064](https://github.com/nestjs/nest/pull/18064) | 76 | 223 | 243 / 155 | 7990 ms | 35 / 100 | 25.9% |
-| [TanStack/query #11711](https://github.com/TanStack/query/pull/11711) | 14 | 28 | 74 / 50 | 6955 ms | 2 / 2 | 50.0% |
+| [honojs/hono #5547](https://github.com/honojs/hono/pull/5547) | 5 | 14 | 63 / 16 | 3070 ms | 2 / 2411 | 0.1% |
+| [honojs/hono #5536](https://github.com/honojs/hono/pull/5536) | 3 | 8 | 113 / 29 | 2110 ms | 0 / 13 | 0.0% |
+| [colinhacks/zod #6587](https://github.com/colinhacks/zod/pull/6587) | 5 | 9 | 110 / 16 | 3702 ms | 55 / 126 | 30.4% |
+| [excalidraw/excalidraw #12260](https://github.com/excalidraw/excalidraw/pull/12260) | 9 | 30 | 477 / 498 | 9019 ms | 320 / 473 | 40.4% |
+| [nestjs/nest #18064](https://github.com/nestjs/nest/pull/18064) | 76 | 223 | 243 / 155 | 7457 ms | 35 / 100 | 25.9% |
+| [TanStack/query #11711](https://github.com/TanStack/query/pull/11711) | 14 | 28 | 74 / 50 | 6369 ms | 2 / 2 | 50.0% |
 
 ## Connected changed declarations
 
@@ -49,7 +49,9 @@ For every successful analysis, Git file lists, per-file added/deleted counts, an
 
 Every resolved call from a changed unit was checked against its pinned Git object: 414 caller expressions and target text/ranges were checked. This establishes source provenance, not runtime dispatch correctness. Representative source links inspected include Zod's old `mayOutputUndefined` calls at before lines 1275/1304, replacement `mayOmitUndefined` calls on the after side, its added wrapper calling the existing helper at after line 1468, and cross-file `util.prefixIssues`.
 
-All six final generated HTML readers passed rendered startup, raw-hunk/file-ledger checks, and cross-report JSON import in Chromium with no page errors or external requests. Artifact hashes are recorded in JSON. The Zod CLI-generated HTML opened offline in Chromium. Both added and removed callees expanded beside the caller, all three `compile.ts` raw hunks were reachable, and the full before snapshot exposed 2,300 lines. Both initial Hono readers also exposed their selected declarations and full file ledgers. Browser checks recorded no page errors or external requests. These are automated interaction checks, not human usability results.
+All six final generated HTML readers passed rendered startup, raw-hunk/file-ledger checks, and cross-report JSON import in Chromium with no page errors or external requests. Artifact hashes are recorded in JSON. The Zod CLI-generated HTML opened offline in Chromium. Its removed before-side call and new after-side call each opened the correct declaration in one replaceable bottom peek, while the caller stayed rendered. Closing the peek retained the caller, and all three `compile.ts` raw hunks stayed reachable. Every real report exposed one complete file navigator and before/after split source. Browser checks recorded no page errors or external requests. These are automated interaction checks, not human usability results.
+
+The hosted HTTP shell starts without any report selected, contains only a labelled synthetic demo payload, and accepts all six local JSON files through the same navigator without source-bearing requests or foreign requests. The public CLI archive has exactly nine allowlisted file/directory entries, no repository/history/reports or AppleDouble metadata, no install scripts or dependency downloads, and notices for all six bundled dependency packages. The extracted Node22 tool generates its demo and offline reader in a system temporary directory with module search overrides cleared, independent of the project node_modules. Archive and executable fingerprints are retained in JSON.
 
 ## Refusals and failures
 

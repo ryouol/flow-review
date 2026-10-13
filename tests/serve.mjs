@@ -2,7 +2,8 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { analyzeSnapshots } from '../src/analyzer.ts';
-import { renderReport } from '../src/render.ts';
+import { renderReport, renderReader } from '../src/render.ts';
+import { createDemo } from '../src/demo.ts';
 
 const base = {
   'entry.ts': 'import { guard } from "./guard";\nimport { wrapper } from "./wrapper";\nimport { shared } from "./shared";\nexport function entry(input: number) {\n  guard(input);\n  return wrapper(input);\n}\nexport function other(input: number) { return shared(input); }\n',
@@ -34,7 +35,13 @@ const unknownSource = 'import { external } from "unavailable-package";\nexport f
 const unknownContract = analyzeSnapshots({ 'main.ts': unknownSource }, { 'main.ts': unknownSource.replace('return external()', 'return external(1)') }, { title: 'Unknown external contract fixture' });
 const callerSource = 'export function target(value: number) { return value + 1; }\nexport function callerElsewhere() {\n  const value = target(1);\n  return value;\n}\nexport function callerEdited() { return target(1); }\nexport function untouched() { return target(1); }\n';
 const callerSites = analyzeSnapshots({ 'main.ts': callerSource }, { 'main.ts': callerSource.replace('return value + 1', 'return value + 2').replace('return value;', 'return value + 1;').replace('function callerEdited() { return target(1)', 'function callerEdited() { return target(2)') }, { title: 'Caller site provenance fixture' });
+const ambiguousBase = 'export function target() { return 1; }\nexport function stringCollision() { const label = "target"; return target() + label.length; }\nexport function commentCollision() { /* target */ return target(); }\nexport function repeated() { return target() + target(); }\n';
+const ambiguousHead = 'export function target() { return 2; }\nexport function stringCollision() { const label = "target"; return target() + label.length + 1; }\nexport function commentCollision() { /* target */ return target() + 1; }\nexport function repeated() { return target() + target() + 1; }\n';
+const ambiguousCalls = analyzeSnapshots({ 'main.ts': ambiguousBase }, { 'main.ts': ambiguousHead }, { title: 'Ambiguous inline call fixture' });
+const longCallerSource = ['export function target() { return 1; }', 'export function longCaller() {', ...Array.from({ length: 12 }, (_, index) => `  const value${index} = ${index};`), `  const message = "${'x'.repeat(80)}"; const result = target();`, ...Array.from({ length: 60 }, (_, index) => `  const filler${index} = "${'long_source_'.repeat(25)}";`), '  return result;', '}', ''].join('\n');
+const longCaller = analyzeSnapshots({ 'main.ts': longCallerSource }, { 'main.ts': longCallerSource.replace('return 1', 'return 2').replace('return result;', 'return result + 1;') }, { title: 'Long caller navigation fixture' });
 const routes = new Map([
+  ['/public-entry.html', ['text/html', renderReader(createDemo())]],
   ['/fixture.html', ['text/html', renderReport(report)]],
   ['/fixture.json', ['application/json', JSON.stringify(report)]],
   ['/fixture-changed.html', ['text/html', renderReport(changed)]],
@@ -45,6 +52,9 @@ const routes = new Map([
   ['/terminators.html', ['text/html', renderReport(terminators)]],
   ['/unknown-contract.html', ['text/html', renderReport(unknownContract)]],
   ['/caller-sites.html', ['text/html', renderReport(callerSites)]],
+  ['/ambiguous-calls.html', ['text/html', renderReport(ambiguousCalls)]],
+  ['/ambiguous-calls.json', ['application/json', JSON.stringify(ambiguousCalls)]],
+  ['/long-caller.html', ['text/html', renderReport(longCaller)]],
 ]);
 const server = createServer((request, response) => {
   const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;

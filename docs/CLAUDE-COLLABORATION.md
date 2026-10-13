@@ -52,3 +52,11 @@ These are findings to resolve or document, not claims that the current product f
 ## Scope and claims
 
 Continue treating interface/override dispatch, outgoing callback flows, workspace packages without source mappings, external types, intra-line ownership, review-mark transfer across pushes, real target-repository GitHub Actions rollout, and non-TypeScript navigation as explicit limitations or future work. A passing test suite and exact Git agreement demonstrate fidelity within their coverage. They do not demonstrate improved human understanding. A seeded real-PR review with Roy would provide the first exploratory usefulness evidence.
+
+## Third round: product critique after Roy tried the UI
+
+Roy explicitly requested renewed Product Design work and Claude collaboration. Message5 contained the product-side prompt; Message6 completed, the composer cleared, and Claude stated the response finished. The critique was based on a source-backed description and Roy's feedback, not a supplied screenshot.
+
+Claude recommended one navigator that also acts as the complete ledger, a dominant code surface, a single callee-change peek or step-in/back interaction, contextual uncertainty signals, readable typography, keyboard-complete review, and an explicit finish/handoff. It ranked removing the right rail, recursive cards, duplicate starting lists, instructional copy, and default-open contract panels above cosmetic polish.
+
+Three ImageGen visual directions were created using the release screenshot Roy explicitly selected as the reference. They are design mockups awaiting Roy's selection, not implemented screens or a fresh visual audit. [The design record](design/product-redesign.json) preserves displayed option ordering, constraints and source links. Human usefulness and willingness to pay remain unmeasured.

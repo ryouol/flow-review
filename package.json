@@ -4,16 +4,35 @@
   "description": "Follow changed TypeScript code across a pull request, with a complete change ledger.",
   "type": "module",
   "private": true,
-  "bin": { "flow-review": "dist/cli.js" },
-  "engines": { "node": ">=22" },
+  "bin": {
+    "flow-review": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:browser": "playwright test",
     "demo": "node dist/cli.js demo --out reports/demo.html",
-    "check": "npm run typecheck && npm run build && npm test && npm run demo && npm run test:browser"
+    "check": "npm run typecheck && npm run build && npm test && npm run demo && node scripts/build-site.mjs && npm run test:browser",
+    "build:site": "npm run build && node scripts/build-site.mjs",
+    "preview:site": "node scripts/preview-site.mjs"
   },
-  "dependencies": { "typescript": "6.0.2", "diff": "9.0.0", "react": "19.3.0", "react-dom": "19.3.0" },
-  "devDependencies": { "tsx": "4.23.15", "esbuild": "0.28.2", "@playwright/test": "1.64.0", "@types/node": "22.19.11", "@types/react": "19.2.14", "@types/react-dom": "19.2.3" }
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "diff": "9.0.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "6.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "22.19.11",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15"
+  }
 }

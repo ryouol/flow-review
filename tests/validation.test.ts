@@ -108,3 +108,16 @@ test('analysis provenance and explicit contract uncertainty are mandatory on imp
   (forgedScope.analysis as { scope: unknown }).scope = { unavailable: true };
   assert.throws(() => validateReport(forgedScope), /scope|analysis|text/i);
 });
+
+test('imported additions and deletions must match the original hunk rows', () => {
+  const additions = fixture(); additions.files[0]!.additions += 123;
+  assert.throws(() => validateReport(additions), /addition|count|hunk|file/i);
+  const deletions = fixture(); deletions.files[0]!.deletions += 123;
+  assert.throws(() => validateReport(deletions), /deletion|count|hunk|file/i);
+});
+
+test('an imported binary marker cannot hide an existing text diff', () => {
+  const report = fixture(); report.files[0]!.binary = true;
+  assert.ok(report.files[0]!.hunks.length > 0);
+  assert.throws(() => validateReport(report), /binary|text|hunk|file/i);
+});

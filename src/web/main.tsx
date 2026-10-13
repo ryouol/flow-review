@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ArrowLeft, ArrowSquareOut, CaretDown, CaretRight, Check, Circle, DotsThree, FileText, FolderSimple, GitBranch, List, MagnifyingGlass, UploadSimple, WarningCircle, X } from './icons.js';
 import type { CallLink, ChangedFile, DiffLine, Report, Side, Unit } from '../model.js';
 import { validateReport } from '../validate.js';
 import { codeDiff } from './diff.js';
@@ -8,284 +9,313 @@ import './styles.css';
 type Revision = 'both' | Side;
 type Selection = { type: 'unit' | 'file'; id: string };
 type Reading = { reviewed: string[]; notes: string };
-const emptyReading = (): Reading => ({ reviewed: [], notes: '' });
+type Panel = 'contracts' | 'analysis' | 'notes' | 'menu' | 'generate' | null;
+type Peek = { link: CallLink; unitId: string };
+type SourceScroll = { top: number; left: number };
+type SourceHistory = { selection: Selection; revision: Revision; scrolls: SourceScroll[]; peek: Peek | null; peekHistory: Peek[]; originId?: string };
 const sideName = (side: Side) => side === 'base' ? 'before' : 'after';
+const emptyReading = (): Reading => ({ reviewed: [], notes: '' });
 const shortHash = (hash: string) => hash.slice(0, 8);
+
 function initialSelection(report: Report): Selection {
   if (!report.files.length) return { type: 'file', id: '' };
-  const start = report.rootIds[0] ?? report.units.find(u => u.changed)?.id;
-  return start ? { type: 'unit', id: start } : { type: 'file', id: report.files[0]?.id ?? '' };
+  const start = report.rootIds[0] ?? report.units.find(unit => unit.changed && unit.kind !== 'file')?.id;
+  return start ? { type: 'unit', id: start } : { type: 'file', id: report.files[0].id };
 }
-
 function hasMetadataChange(file: ChangedFile): boolean {
   const noNewline = (text?: string) => !!text && !text.endsWith('\n');
-  return file.status === 'renamed' || file.status === 'type-changed' ||
-    file.oldMode !== file.newMode || noNewline(file.base) !== noNewline(file.head);
+  return file.status === 'renamed' || file.status === 'type-changed' || file.oldMode !== file.newMode || noNewline(file.base) !== noNewline(file.head);
 }
-
 function readState(id: string): Reading {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(`flow-review:${id}`) ?? 'null');
-    if (value && typeof value === 'object' && 'reviewed' in value && Array.isArray(value.reviewed) && value.reviewed.every(x => typeof x === 'string')) {
-      return { reviewed: value.reviewed, notes: 'notes' in value && typeof value.notes === 'string' ? value.notes : '' };
-    }
-  } catch { /* State is optional; a report must open with storage disabled. */ }
+    if (value && typeof value === 'object' && 'reviewed' in value && Array.isArray(value.reviewed) && value.reviewed.every(key => typeof key === 'string') && 'notes' in value && typeof value.notes === 'string') return { reviewed: value.reviewed, notes: value.notes };
+  } catch { /* An offline report remains usable without browser storage. */ }
   return emptyReading();
 }
-
-function Icon({ name }: { name: 'arrow' | 'check' | 'file' | 'branch' | 'search' | 'close' }) {
-  const paths = {
-    arrow: <path d="m6 4 5 4-5 4" />,
-    check: <path d="m3 8 3 3 7-7" />,
-    file: <><path d="M4 2h5l3 3v9H4z" /><path d="M9 2v4h3M6 9h4M6 11h4" /></>,
-    branch: <><circle cx="4" cy="3" r="1.5" /><circle cx="12" cy="3" r="1.5" /><circle cx="4" cy="13" r="1.5" /><path d="M4 5v6M12 5c0 4-8 2-8 6" /></>,
-    search: <><circle cx="7" cy="7" r="4" /><path d="m10 10 4 4" /></>,
-    close: <path d="m4 4 8 8M12 4l-8 8" />,
-  };
-  return <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
-}
-
 function VisibleCharacters({ text }: { text: string }) {
-  const parts = text.split(/([\r\u00ad\u034f\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff])/g);
-  return <>{parts.map((part, index) => {
+  return <>{text.split(/([\r\u00ad\u034f\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff])/g).map((part, index) => {
     if (index % 2 === 0) return part;
     const label = part === '\r' ? 'CR' : `U+${part.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`;
     return <span key={index} className="source-control" title={`Visible source control: ${label}`}>[{label}]</span>;
   })}</>;
 }
-
 function CodeText({ text }: { text: string }) {
-  // Styling is presentation only. Source is always React text, never HTML.
   const parts = text.split(/(\/\/.*$|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b(?:async|await|return|if|else|throw|new|const|let|function|export|import|from|class|interface|type|try|catch|true|false|null|undefined)\b|\b\d+(?:\.\d+)?\b)/g);
-  return <>{parts.map((part, i) => <span key={i} className={part.startsWith('//') ? 'syntax-comment' : /^['"]/.test(part) ? 'syntax-string' : /^(async|await|return|if|else|throw|new|const|let|function|export|import|from|class|interface|type|try|catch|true|false|null|undefined)$/.test(part) ? 'syntax-keyword' : /^\d/.test(part) ? 'syntax-number' : undefined}><VisibleCharacters text={part} /></span>)}</>;
+  return <>{parts.map((part, index) => <span key={index} className={part.startsWith('//') ? 'syntax-comment' : /^['"]/.test(part) ? 'syntax-string' : /^(async|await|return|if|else|throw|new|const|let|function|export|import|from|class|interface|type|try|catch|true|false|null|undefined)$/.test(part) ? 'syntax-keyword' : /^\d/.test(part) ? 'syntax-number' : undefined}><VisibleCharacters text={part} /></span>)}</>;
 }
 
-interface Shared {
-  report: Report; revision: Revision; reviewed: Set<string>;
-  mark: (keys: string[], checked: boolean) => void; select: (selection: Selection) => void;
-  unitKeys: (unit: Unit) => string[]; fileKeys: (file: ChangedFile) => string[];
-}
-
-function ReviewButton({ keys, name, shared, file = false }: { keys: string[]; name: string; shared: Shared; file?: boolean }) {
-  if (!keys.length) return <span className="unchanged-label">Context only</span>;
-  const checked = keys.every(k => shared.reviewed.has(k));
-  return <button className={`review-button ${checked ? 'is-reviewed' : ''}`} aria-pressed={checked} aria-label={`${checked ? (file ? 'Mark file unread' : 'Mark unread') : (file ? 'Mark file reviewed' : 'Mark reviewed')}: ${name}`} onClick={() => shared.mark(keys, !checked)}><Icon name="check" />{checked ? 'Reviewed' : 'Mark reviewed'}</button>;
-}
-
-function CallRow({ link, shared, ancestors, depth }: { link: CallLink; shared: Shared; ancestors: string[]; depth: number }) {
-  const [open, setOpen] = useState(false);
-  const target = shared.report.units.find(u => u.id === link.to);
-  const cycle = target && ancestors.includes(target.id);
-  const boundary = cycle || depth >= 6;
-  const label = `${open ? 'Collapse' : 'Expand'} ${link.expression} from ${sideName(link.side)} line ${link.line}`;
-  return <div className={`call-block ${link.status === 'removed' ? 'removed-call' : ''}`} data-testid="call-link" data-side={link.side} data-line={link.line}>
-    <div className="call-row">
-      <span className={`side-dot ${link.side}`} aria-hidden="true" />
-      {target ? <button className="call-trigger" aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)}><span className={open ? 'chevron opened' : 'chevron'}><Icon name="arrow" /></span><code>{link.expression}</code></button> : <span className="unresolved-expression"><code>{link.expression}</code></span>}
-      <span className="call-meta">{sideName(link.side)}:{link.line}</span>
-      <span className={`badge ${link.status}`}>{link.status === 'removed' ? 'Removed call' : link.status === 'added' ? 'Added call' : 'Call'}</span>
-      <span className={`evidence ${link.evidence}`}>{link.evidence === 'resolved' ? 'Static target' : 'Unresolved'}</span>
-    </div>
-    {!target && <p className="boundary-note">{link.reason || 'No declaration could be resolved. Inspect this call in the source.'}</p>}
-    {open && target && <div className="inline-callee">
-      {boundary ? <div className="boundary-box"><strong>{cycle ? 'Recursive path' : 'Depth limit reached'}</strong><p>{cycle ? `${target.name} is already on this reading path.` : 'Open the target as a new starting point to keep following it.'}</p><button onClick={() => shared.select({ type: 'unit', id: target.id })}>Start at {target.name}<Icon name="arrow" /></button></div> : <FunctionCard unit={target} shared={shared} ancestors={[...ancestors, target.id]} depth={depth + 1} />}
-    </div>}
-  </div>;
-}
-
-function CodeLines({ rows, links = [], shared, ancestors = [], depth = 0 }: { rows: DiffLine[]; links?: CallLink[]; shared: Shared; ancestors?: string[]; depth?: number }) {
-  const visible = rows.filter(row => shared.revision === 'both' || (shared.revision === 'base' ? row.oldLine !== undefined : row.newLine !== undefined));
-  const selectedLinks = links.filter(link => shared.revision === 'both' || shared.revision === link.side);
-  const unresolved = selectedLinks.filter(link => link.evidence === 'unresolved');
-  const compact = unresolved.length > 5;
-  const inlineLinks = compact ? selectedLinks.filter(link => link.evidence === 'resolved') : selectedLinks;
-  const displayed = new Set<string>();
-  return <div className={`code-lines revision-${shared.revision}`}>
-    <div className="line-column-labels"><span>Before</span><span>After</span><span>Source</span></div>
-    {visible.map((row, i) => {
-      const calls = inlineLinks.filter(link => (link.side === 'base' ? row.oldLine : row.newLine) === link.line);
-      calls.forEach(link => displayed.add(link.id));
-      return <React.Fragment key={`${row.oldLine ?? 'x'}-${row.newLine ?? 'x'}-${i}`}>
-        <div className={`code-line ${row.kind}`} data-testid="code-line" data-old-line={row.oldLine} data-new-line={row.newLine}>
-          <span className="line-number old-number" aria-label={row.oldLine ? `Before line ${row.oldLine}` : undefined}>{row.oldLine ?? ''}</span>
-          <span className="line-number new-number" aria-label={row.newLine ? `After line ${row.newLine}` : undefined}>{row.newLine ?? ''}</span>
-          <span className="diff-sign" aria-hidden="true">{row.kind === 'add' ? '+' : row.kind === 'remove' ? '−' : ' '}</span>
-          <code><CodeText text={row.text || ' '} /></code>
-        </div>
-        {calls.map(link => <CallRow key={link.id} link={link} shared={shared} ancestors={ancestors} depth={depth} />)}
-      </React.Fragment>;
-    })}
-    {!visible.length && <p className="empty-code">No source on this revision.</p>}
-    {inlineLinks.filter(l => !displayed.has(l.id)).map(link => <CallRow key={link.id} link={link} shared={shared} ancestors={ancestors} depth={depth} />)}
-    {compact && <details className="unresolved-list"><summary>{unresolved.length} unresolved call sites in this declaration<span>Source shown above · targets unavailable</span></summary>{unresolved.map(link => <CallRow key={link.id} link={link} shared={shared} ancestors={ancestors} depth={depth} />)}</details>}
-  </div>;
-}
-
-function ContractPanel({ unit, shared }: { unit: Unit; shared: Shared }) {
-  const incoming = shared.report.links.filter(link => link.evidence === 'resolved' && link.to === unit.id);
-  const editedSites = useMemo(() => {
-    const files = new Map(shared.report.files.map(file => [file.id, file]));
-    return new Set(shared.report.edits.map(edit => {
-      const file = files.get(edit.fileId)!;
-      return `${edit.side}\0${edit.side === 'base' ? file.oldPath ?? file.path : file.path}\0${edit.line}`;
-    }));
-  }, [shared.report]);
-  const groups: { label: string; links: CallLink[] }[] = [
-    { label: 'Changed callers', links: [] }, { label: 'Untouched callers', links: [] }, { label: 'Removed callers', links: [] },
-  ];
-  incoming.forEach(link => {
-    const caller = shared.report.units.find(u => u.id === link.from);
-    const index = link.status === 'removed' || !caller?.head ? 2 : caller.changed ? 0 : 1;
-    groups[index].links.push(link);
-  });
-  return <details className="contract-panel"><summary><strong>Contract &amp; callers</strong><span>{incoming.length} resolved call sites</span></summary><div className="contract-content">
-    <div className="contract-revisions">{(['base', 'head'] as Side[]).filter(side => shared.revision === 'both' || shared.revision === side).map(side => {
-      const contract = unit.contract?.[side];
-      return <section className="contract-revision" key={side}><span className="eyebrow">{sideName(side)} contract</span>{contract ? <><code>{contract.signature}</code><div className="return-contract"><span>Returns</span><code>{contract.returnType}</code><span className="badge">{contract.inferred ? 'Inferred return type' : 'Declared return type'}</span>{contract.unknown && <span className="badge caution">Contract unknown</span>}</div>{contract.unknown && <p className="contract-unknown-note">Omitted or unresolved types limit this contract. No reliable equivalence claim can be made.</p>}</> : <p>{unit[side] ? 'No contract extracted for this declaration.' : `Absent ${sideName(side)}.`}</p>}</section>;
-    })}</div>
-    <p className="caller-scope">Resolved calls within acquired snapshots; dynamic/external uses not included.</p>
-    {incoming.length ? groups.filter(group => group.links.length).map(group => <details key={group.label} className="caller-group" open={group.links.length <= 8}><summary>{group.label}<span>{group.links.length} call sites</span></summary><div className="caller-list">{group.links.map(link => {
-      const caller = shared.report.units.find(u => u.id === link.from)!;
-      const siteEdited = editedSites.has(`${link.side}\0${caller[link.side]?.path ?? caller.path}\0${link.line}`);
-      return <button key={link.id} aria-label={`Open caller ${caller.name} from ${sideName(link.side)} line ${link.line}`} onClick={() => shared.select({ type: 'unit', id: caller.id })}><span><strong>{caller.name}</strong><code>{caller[link.side]?.path ?? caller.path}:{link.line}</code><span className="caller-edit-evidence">{siteEdited ? 'Call-site line edited' : caller.changed ? 'Caller changed elsewhere' : 'Call-site line untouched'}</span></span><span className="badge">{sideName(link.side)}</span>{link.status === 'removed' && <span className="badge removed">Removed call</span>}<Icon name="arrow" /></button>;
-    })}</div></details>) : <p className="no-callers">No incoming calls were resolved in these snapshots. This does not establish that the declaration has no users.</p>}
-  </div></details>;
-}
-
-function FunctionCard({ unit, shared, ancestors, depth = 0 }: { unit: Unit; shared: Shared; ancestors: string[]; depth?: number }) {
-  const rows = useMemo(() => codeDiff(unit.base, unit.head), [unit]);
-  const links = shared.report.links.filter(l => l.from === unit.id);
-  const file = shared.report.files.find(f => f.path === unit.path || f.oldPath === unit.path);
-  return <article className={`function-card ${depth ? 'nested-card' : ''}`} aria-label={`${unit.name} source`}>
-    {depth > 0 && <nav className="inline-breadcrumb" aria-label="Call path">{ancestors.map((id, index) => { const ancestor = shared.report.units.find(u => u.id === id); return <React.Fragment key={`${id}-${index}`}>{index > 0 && <Icon name="arrow" />}<button aria-label={`Start at ${ancestor?.name ?? id}`} onClick={() => shared.select({ type: 'unit', id })}>{ancestor?.name ?? id}</button></React.Fragment>; })}</nav>}
-    <header className="function-header">
-      <div className="function-identity"><span className="eyebrow">{depth ? 'Called declaration' : 'Reading'} · {unit.kind}{unit.exported ? ' · exported' : ''}</span><h2>{unit.name}<span className={`badge ${unit.changed ? 'modified' : ''}`}>{unit.changed ? !unit.base ? 'Added' : !unit.head ? 'Deleted' : 'Changed' : 'Unchanged context'}</span></h2><div className="source-path">{unit.path}<span>{unit.base ? `before ${unit.base.startLine}–${unit.base.endLine}` : 'absent before'} · {unit.head ? `after ${unit.head.startLine}–${unit.head.endLine}` : 'absent after'}</span></div></div>
-      <ReviewButton keys={shared.unitKeys(unit)} name={unit.name} shared={shared} />
-    </header>
-    {unit.kind !== 'file' && <ContractPanel unit={unit} shared={shared} />}
-    {unit.markers.length > 0 && <div className="markers">{unit.markers.map((marker, i) => <span key={i}>{marker}</span>)}</div>}
-    <CodeLines rows={rows} links={links} shared={shared} ancestors={ancestors} depth={depth} />
-    <footer className="function-footer"><span>{links.length ? `${links.filter(l => shared.revision === 'both' || l.side === shared.revision).length} call sites on selected revisions` : 'No outgoing call sites recorded'}</span>{file && <button onClick={() => shared.select({ type: 'file', id: file.id })}>Raw file diff<Icon name="arrow" /></button>}</footer>
-  </article>;
-}
-
-function FileCard({ file, shared }: { file: ChangedFile; shared: Shared }) {
-  const [fullSide, setFullSide] = useState<Side | null>(null);
-  const units = file.unitIds.map(id => shared.report.units.find(u => u.id === id)).filter((u): u is Unit => !!u);
-  const text = fullSide === 'base' ? file.base : file.head;
-  return <article className="file-card" aria-label={`${file.path} raw diff`}>
-    <header className="file-header"><div><span className="eyebrow">Complete file inventory · {file.status}</span><h2>{file.path}</h2>{file.oldPath && file.oldPath !== file.path && <p className="rename-path">{file.oldPath} → {file.path}</p>}<div className="file-summary"><span className="addition">+{file.additions}</span><span className="deletion">−{file.deletions}</span><span>{file.hunks.length} {file.hunks.length === 1 ? 'hunk' : 'hunks'}</span>{file.oldMode !== file.newMode && <span className="file-mode-change">Mode {file.oldMode ?? 'absent'} → {file.newMode ?? 'absent'}</span>}</div>{!file.binary && <div className="newline-metadata" aria-label="Final newline metadata">{file.base && !file.base.endsWith('\n') && <span className="badge caution">No final newline before</span>}{file.head && !file.head.endsWith('\n') && <span className="badge caution">No final newline after</span>}</div>}</div><ReviewButton keys={shared.fileKeys(file)} name={file.path} shared={shared} file /></header>
-    {units.some(u => u.kind !== 'file') && <div className="file-symbols"><span>Declarations in this file</span>{units.filter(u => u.kind !== 'file').map(u => <button key={u.id} onClick={() => shared.select({ type: 'unit', id: u.id })}>{u.name}<Icon name="arrow" /></button>)}</div>}
-    <div className="snapshot-tools"><button className={!fullSide ? 'selected' : ''} onClick={() => setFullSide(null)}>Raw hunks</button><button disabled={file.base === undefined} className={fullSide === 'base' ? 'selected' : ''} onClick={() => setFullSide('base')}>Full before</button><button disabled={file.head === undefined} className={fullSide === 'head' ? 'selected' : ''} onClick={() => setFullSide('head')}>Full after</button></div>
-    {file.binary ? <div className="file-boundary"><Icon name="file" /><h3>Binary file</h3><p>The file is included in the inventory. Binary content cannot be displayed as a text diff.</p></div> : fullSide && text !== undefined ? <CodeLines rows={codeDiff(fullSide === 'base' ? { path: file.oldPath ?? file.path, startLine: 1, endLine: Math.max(1, text.split('\n').length), text } : undefined, fullSide === 'head' ? { path: file.path, startLine: 1, endLine: Math.max(1, text.split('\n').length), text } : undefined)} shared={{ ...shared, revision: fullSide }} /> : file.hunks.length ? file.hunks.map(h => <section key={h.id} className="raw-hunk" data-testid="raw-hunk" data-hunk-id={h.id}><header><code>@@ −{h.oldStart},{h.oldLines} +{h.newStart},{h.newLines} @@</code><span>Original Git hunk</span></header><CodeLines rows={h.lines} shared={shared} /></section>) : <div className="file-boundary"><Icon name="file" /><h3>No text hunks</h3><p>This change may affect the filename, permissions, type, or an empty file. It still needs an explicit review.</p></div>}
-  </article>;
-}
-
-function App({ initialReport }: { initialReport: Report }) {
-  const [report, setReport] = useState(initialReport);
-  const [reading, setReading] = useState(() => readState(initialReport.id));
-  const [selection, setSelection] = useState<Selection>(() => initialSelection(initialReport));
-  const [revision, setRevision] = useState<Revision>('both');
-  const [search, setSearch] = useState(''); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
-  const [showNotes, setShowNotes] = useState(false); const [showEvidence, setShowEvidence] = useState(false); const [confirmReset, setConfirmReset] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null); const contentRef = useRef<HTMLElement>(null);
-  const reviewed = useMemo(() => new Set(reading.reviewed), [reading.reviewed]);
-  const changed = report.units.filter(u => u.changed);
-  const editOwners = new Set(report.edits.map(edit => edit.unitId));
-  const unitKeys = (u: Unit) => editOwners.has(u.id) || (u.changed && u.kind === 'file' && report.files.some(f => f.unitIds.includes(u.id) && !f.hunks.length && !hasMetadataChange(f))) ? [`unit:${u.id}`] : [];
-  const fileKeys = (f: ChangedFile) => {
-    const keys = [...new Set(report.edits.filter(edit => edit.fileId === f.id).map(edit => `unit:${edit.unitId}`))];
-    f.unitIds.forEach(id => { const u = report.units.find(u => u.id === id); if (u && !f.hunks.length) keys.push(...unitKeys(u)); });
-    if (hasMetadataChange(f)) keys.push(`metadata:${f.id}`);
-    if (!keys.length) keys.push(`file:${f.id}`);
+interface ReviewModel { unitKeys: (unit: Unit) => string[]; fileKeys: (file: ChangedFile) => string[]; canonical: Set<string> }
+function reviewModel(report: Report | null): ReviewModel {
+  const units = report?.units ?? []; const files = report?.files ?? []; const edits = report?.edits ?? [];
+  const editOwners = new Set(edits.map(edit => edit.unitId));
+  const unitKeys = (unit: Unit) => editOwners.has(unit.id) || (unit.changed && unit.kind === 'file' && files.some(file => file.unitIds.includes(unit.id) && !file.hunks.length && !hasMetadataChange(file))) ? [`unit:${unit.id}`] : [];
+  const fileKeys = (file: ChangedFile) => {
+    const keys = [...new Set(edits.filter(edit => edit.fileId === file.id).map(edit => `unit:${edit.unitId}`))];
+    if (!file.hunks.length) file.unitIds.forEach(id => { const unit = units.find(unit => unit.id === id); if (unit) keys.push(...unitKeys(unit)); });
+    if (hasMetadataChange(file)) keys.push(`metadata:${file.id}`);
+    if (!keys.length) keys.push(`file:${file.id}`);
     return [...new Set(keys)];
   };
-  const canonical = new Set(report.files.flatMap(fileKeys));
-  changed.forEach(u => unitKeys(u).forEach(key => canonical.add(key)));
-  const reviewedCount = [...canonical].filter(key => reviewed.has(key)).length;
-  const total = canonical.size;
-  const uniqueEdits = [...new Map(report.edits.map(edit => [edit.id, edit])).values()];
-  const reviewedEdits = uniqueEdits.filter(edit => reviewed.has(`unit:${edit.unitId}`)).length;
-  const filteredUnits = changed.filter(u => u.kind !== 'file').filter(u => `${u.name} ${u.path}`.toLowerCase().includes(search.toLowerCase()));
-  const filteredFiles = report.files.filter(f => `${f.path} ${f.oldPath ?? ''} ${f.status}`.toLowerCase().includes(search.toLowerCase()));
-  const roots = report.rootIds.map(id => report.units.find(u => u.id === id)).filter((u): u is Unit => !!u).filter(u => `${u.name} ${u.path}`.toLowerCase().includes(search.toLowerCase()));
-  const unit = selection.type === 'unit' ? report.units.find(u => u.id === selection.id) : undefined;
-  const file = selection.type === 'file' ? report.files.find(f => f.id === selection.id) : unit?.kind === 'file' ? report.files.find(f => f.unitIds.includes(unit.id)) : undefined;
-  const select = (next: Selection) => { setSelection(next); setNotice(''); requestAnimationFrame(() => contentRef.current?.focus({ preventScroll: true })); };
-  const nextUnreviewed = () => {
-    const queue: { selection: Selection; keys: string[] }[] = [];
-    report.files.forEach(currentFile => {
-      fileKeys(currentFile).forEach(key => {
-        const owner = key.startsWith('unit:') ? report.units.find(u => `unit:${u.id}` === key) : undefined;
-        const target: Selection = owner && owner.kind !== 'file' ? { type: 'unit', id: owner.id } : { type: 'file', id: currentFile.id };
-        const existing = queue.find(item => item.selection.type === target.type && item.selection.id === target.id);
-        if (existing) existing.keys.push(key); else queue.push({ selection: target, keys: [key] });
-      });
+  const canonical = new Set(files.flatMap(fileKeys));
+  units.forEach(unit => unitKeys(unit).forEach(key => canonical.add(key)));
+  return { unitKeys, fileKeys, canonical };
+}
+
+function alignRows(rows: DiffLine[]): { base?: DiffLine; head?: DiffLine }[] {
+  const aligned: { base?: DiffLine; head?: DiffLine }[] = [];
+  let index = 0;
+  while (index < rows.length) {
+    if (rows[index].kind === 'context') { aligned.push({ base: rows[index], head: rows[index] }); index++; continue; }
+    const removed: DiffLine[] = []; const added: DiffLine[] = [];
+    while (index < rows.length && rows[index].kind !== 'context') { (rows[index].kind === 'remove' ? removed : added).push(rows[index]); index++; }
+    for (let offset = 0; offset < Math.max(removed.length, added.length); offset++) aligned.push({ base: removed[offset], head: added[offset] });
+  }
+  return aligned;
+}
+function snapshotRows(text: string, startLine: number, side: Side, changed = new Set<number>()): DiffLine[] {
+  if (!text) return [];
+  return text.replace(/\n$/, '').split('\n').map((text, index) => {
+    const line = startLine + index;
+    return { kind: changed.has(line) ? side === 'base' ? 'remove' : 'add' : 'context', text, ...(side === 'base' ? { oldLine: line } : { newLine: line }) };
+  });
+}
+
+interface SourceProps { rows: DiffLine[]; revision: Revision; links?: CallLink[]; onPeek: (link: CallLink, origin: HTMLElement) => void; activePeek?: string; compact?: boolean }
+function SourceLine({ row, side, links, onPeek, activePeek }: { row?: DiffLine; side: Side; links: CallLink[]; onPeek: SourceProps['onPeek']; activePeek?: string }) {
+  if (!row) return <div className="source-line source-gap" aria-hidden="true" />;
+  const line = side === 'base' ? row.oldLine : row.newLine;
+  const calls = links.filter(link => link.side === side && link.line === line && link.evidence === 'resolved' && link.to);
+  const chunks: React.ReactNode[] = [];
+  const unmatched: CallLink[] = [];
+  let offset = 0;
+  calls.forEach(link => {
+    const firstOccurrence = row.text.indexOf(link.expression);
+    const uniqueExpression = calls.filter(call => call.expression === link.expression).length === 1;
+    const uniqueSourceOccurrence = firstOccurrence >= 0 && row.text.indexOf(link.expression, firstOccurrence + link.expression.length) === -1;
+    if (!uniqueExpression || !uniqueSourceOccurrence) { unmatched.push(link); return; }
+    const match = row.text.indexOf(link.expression, offset);
+    if (match < 0) { unmatched.push(link); return; }
+    chunks.push(<CodeText key={`${link.id}-prefix`} text={row.text.slice(offset, match)} />);
+    chunks.push(<button key={link.id} data-call-id={link.id} data-testid="call-link" data-placement="inline" data-side={side} data-line={line} aria-label={`Peek ${link.expression} from ${sideName(side)} line ${line}`} aria-pressed={activePeek === link.id} className={`source-call ${link.status === 'removed' ? 'removed-call' : ''} ${activePeek === link.id ? 'peeked-call' : ''}`} title={`${link.status === 'removed' ? 'Removed call · ' : ''}Static declaration · ${sideName(side)}:${line}`} onClick={event => onPeek(link, event.currentTarget)}><VisibleCharacters text={link.expression} /></button>);
+    offset = match + link.expression.length;
+  });
+  chunks.push(<CodeText key="suffix" text={row.text.slice(offset) || (offset ? '' : ' ')} />);
+  return <div className={`source-line ${row.kind}`} data-testid="code-line" data-side={side} data-old-line={side === 'base' ? row.oldLine : undefined} data-new-line={side === 'head' ? row.newLine : undefined}><span className="line-number">{line ?? ''}</span><code>{chunks}{unmatched.map(link => <button key={link.id} data-call-id={link.id} className="multiline-call" data-testid="call-link" data-placement="line" data-side={side} data-line={line} aria-label={`Peek ${link.expression} from ${sideName(side)} line ${line}`} title={`Static declaration · ${sideName(side)}:${line} · ${link.expression}`} onClick={event => onPeek(link, event.currentTarget)}><ArrowSquareOut size={13} /></button>)}</code></div>;
+}
+function SourceView({ rows, revision, links = [], onPeek, activePeek, compact = false }: SourceProps) {
+  const aligned = useMemo(() => alignRows(rows), [rows]);
+  const beforeRef = useRef<HTMLDivElement>(null); const afterRef = useRef<HTMLDivElement>(null);
+  const sides: Side[] = revision === 'both' ? ['base', 'head'] : [revision];
+  return <div className={`source-view ${revision === 'both' ? 'split-view' : 'single-view'} ${compact ? 'compact-source' : ''}`} data-testid="source-view" data-revision={revision}>
+    {sides.map(side => <section className={`source-plane ${side}`} aria-label={`${sideName(side)} source`} key={side}><header>{side === 'base' ? 'Before' : 'After'}</header><div className="source-scroll" ref={side === 'base' ? beforeRef : afterRef} onScroll={event => { const opposite = side === 'base' ? afterRef.current : beforeRef.current; if (opposite && opposite.scrollTop !== event.currentTarget.scrollTop) opposite.scrollTop = event.currentTarget.scrollTop; }}>
+      {aligned.filter(pair => revision === 'both' || pair[side]).map((pair, index) => <SourceLine key={index} row={pair[side]} side={side} links={links} onPeek={onPeek} activePeek={activePeek} />)}
+      {!aligned.some(pair => pair[side]) && <p className="empty-source">No source on this revision.</p>}
+    </div></section>)}
+  </div>;
+}
+
+function Metadata({ file }: { file: ChangedFile }) {
+  return <div className="file-metadata"><span className="status-label">{file.status}</span><span className="addition">+{file.additions}</span><span className="deletion">−{file.deletions}</span><span>{file.hunks.length} {file.hunks.length === 1 ? 'hunk' : 'hunks'}</span>{file.oldPath && file.oldPath !== file.path && <code className="metadata-line">{file.oldPath} → {file.path}</code>}{file.oldMode !== file.newMode && <code className="metadata-line">Mode {file.oldMode ?? 'absent'} → {file.newMode ?? 'absent'}</code>}{!file.binary && file.base && !file.base.endsWith('\n') && <span className="badge caution">No final newline before</span>}{!file.binary && file.head && !file.head.endsWith('\n') && <span className="badge caution">No final newline after</span>}</div>;
+}
+function FileReader({ file, revision, onPeek }: { file: ChangedFile; revision: Revision; onPeek: SourceProps['onPeek'] }) {
+  const [snapshot, setSnapshot] = useState<Side | null>(null);
+  const text = snapshot === 'base' ? file.base : file.head;
+  return <article className="file-reader" aria-label={`${file.path} raw diff`}><div className="file-reader-header"><Metadata file={file} /><div className="snapshot-control" role="group" aria-label="File source"><button aria-pressed={!snapshot} onClick={() => setSnapshot(null)}>Raw hunks</button><button aria-pressed={snapshot === 'base'} disabled={file.base === undefined} onClick={() => setSnapshot('base')}>Full before</button><button aria-pressed={snapshot === 'head'} disabled={file.head === undefined} onClick={() => setSnapshot('head')}>Full after</button></div></div><div className="raw-file-scroll">
+    {file.binary ? <div className="file-boundary"><FileText size={28} /><h2>Binary file</h2><p>This file is included in the review inventory. Binary content has no text diff.</p></div> : snapshot && text !== undefined ? <SourceView rows={snapshotRows(text, 1, snapshot, new Set(file.hunks.flatMap(hunk => hunk.lines.filter(line => line.kind === (snapshot === 'base' ? 'remove' : 'add')).map(line => (snapshot === 'base' ? line.oldLine : line.newLine)!))))} revision={snapshot} onPeek={onPeek} /> : file.hunks.length ? file.hunks.map(hunk => <section className="raw-hunk" key={hunk.id} data-testid="raw-hunk" data-hunk-id={hunk.id}><header><code>@@ −{hunk.oldStart},{hunk.oldLines} +{hunk.newStart},{hunk.newLines} @@</code><span>Original Git hunk</span></header><SourceView rows={hunk.lines} revision={revision} onPeek={onPeek} /></section>) : <div className="file-boundary"><FileText size={28} /><h2>No text hunks</h2><p>Review the filename, modes, and file metadata above. This change still requires an explicit review.</p></div>}
+  </div></article>;
+}
+
+interface Directory { name: string; path: string; directories: Directory[]; files: ChangedFile[] }
+function directoryTree(files: ChangedFile[]): Directory {
+  const root: Directory = { name: '', path: '', directories: [], files: [] };
+  files.forEach(file => { const parts = file.path.split('/'); let directory = root; parts.slice(0, -1).forEach(name => { let child = directory.directories.find(child => child.name === name); if (!child) { child = { name, path: directory.path ? `${directory.path}/${name}` : name, directories: [], files: [] }; directory.directories.push(child); } directory = child; }); directory.files.push(file); });
+  return root;
+}
+interface NavProps { report: Report; selected: Selection; reviewed: Set<string>; model: ReviewModel; search: string; expanded: Set<string>; setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>; select: (selection: Selection) => void }
+function FileBranch({ file, props }: { file: ChangedFile; props: NavProps }) {
+  const functions = file.unitIds.map(id => props.report.units.find(unit => unit.id === id)).filter((unit): unit is Unit => !!unit && unit.kind !== 'file' && unit.changed);
+  const query = props.search.toLowerCase();
+  const fileMatches = `${file.path} ${file.oldPath ?? ''}`.toLowerCase().includes(query);
+  const visible = functions.filter(unit => fileMatches || unit.name.toLowerCase().includes(query));
+  if (!fileMatches && !visible.length) return null;
+  const open = props.expanded.has(file.id) || !!props.search;
+  const selected = props.selected.type === 'file' && props.selected.id === file.id;
+  const done = props.model.fileKeys(file).every(key => props.reviewed.has(key));
+  return <div className="file-branch"><div className={`file-nav-row ${selected ? 'selected' : ''}`}><button className="file-disclosure" aria-label={`Toggle file ${file.path}`} aria-expanded={open} disabled={!functions.length} onClick={() => props.setExpanded(previous => { const next = new Set(previous); next.has(file.id) ? next.delete(file.id) : next.add(file.id); return next; })}>{functions.length ? open ? <CaretDown size={14} /> : <CaretRight size={14} /> : <FileText size={14} />}</button><button className="file-nav-button" aria-label={`Open file ${file.path}`} aria-current={selected ? 'page' : undefined} onClick={() => { props.setExpanded(previous => new Set([...previous, file.id])); props.select({ type: 'file', id: file.id }); }}><FileText size={15} /><span>{file.path.split('/').at(-1)}</span><Circle size={6} weight="fill" className={done ? 'reviewed-dot' : 'unread-dot'} /><span className="sr-only">{done ? 'Reviewed' : 'Unread'}</span></button></div>{open && visible.map(unit => { const keys = props.model.unitKeys(unit); const unitDone = !!keys.length && keys.every(key => props.reviewed.has(key)); const active = props.selected.type === 'unit' && props.selected.id === unit.id; return <button key={unit.id} className={`unit-nav-button ${active ? 'selected' : ''}`} aria-label={`Open ${unit.name}`} aria-current={active ? 'page' : undefined} onClick={() => props.select({ type: 'unit', id: unit.id })}><Circle size={7} /><span>{unit.name}</span><Circle size={6} weight="fill" className={unitDone ? 'reviewed-dot' : active ? 'selected-dot' : 'unread-dot'} /><span className="sr-only">{unitDone ? 'Reviewed' : !keys.length ? 'Context only' : 'Unread'}</span></button>; })}</div>;
+}
+function DirectoryBranch({ directory, props, root = false }: { directory: Directory; props: NavProps; root?: boolean }) {
+  const [open, setOpen] = useState(true);
+  const hasMatch = (node: Directory): boolean => node.files.some(file => `${file.path} ${file.oldPath ?? ''}`.toLowerCase().includes(props.search.toLowerCase()) || file.unitIds.some(id => props.report.units.find(unit => unit.id === id)?.name.toLowerCase().includes(props.search.toLowerCase()))) || node.directories.some(hasMatch);
+  if (props.search && !hasMatch(directory)) return null;
+  return <div className={root ? 'navigation-root' : 'directory-branch'}>{!root && <button className="directory-button" aria-expanded={open || !!props.search} onClick={() => setOpen(!open)}>{open || props.search ? <CaretDown size={14} /> : <CaretRight size={14} />}<FolderSimple size={16} weight="duotone" /><span>{directory.name}</span></button>}{(root || open || props.search) && <div className={root ? '' : 'directory-content'}>{directory.files.map(file => <FileBranch file={file} key={file.id} props={props} />)}{directory.directories.map(child => <DirectoryBranch directory={child} key={child.path} props={props} />)}</div>}</div>;
+}
+
+function ContractPanel({ unit, report, select, revision, onPeek }: { unit: Unit; report: Report; select: (selection: Selection) => void; revision: Revision; onPeek: SourceProps['onPeek'] }) {
+  const incoming = report.links.filter(link => link.evidence === 'resolved' && link.to === unit.id);
+  const unresolved = report.links.filter(link => link.from === unit.id && link.evidence === 'unresolved' && (revision === 'both' || link.side === revision));
+  const fileById = new Map(report.files.map(file => [file.id, file]));
+  const editedSites = new Set(report.edits.map(edit => { const file = fileById.get(edit.fileId)!; return `${edit.side}\0${edit.side === 'base' ? file.oldPath ?? file.path : file.path}\0${edit.line}`; }));
+  const groups = [{ label: 'Changed callers', links: [] as CallLink[] }, { label: 'Untouched callers', links: [] as CallLink[] }, { label: 'Removed callers', links: [] as CallLink[] }];
+  incoming.forEach(link => { const caller = report.units.find(unit => unit.id === link.from)!; groups[link.status === 'removed' || !caller.head ? 2 : caller.changed ? 0 : 1].links.push(link); });
+  return <><h2>Contract &amp; callers</h2><div className="contract-revisions">{(['base', 'head'] as Side[]).filter(side => revision === 'both' || revision === side).map(side => { const contract = unit.contract?.[side]; return <section key={side}><h3>{sideName(side)} contract</h3>{contract ? <><code><VisibleCharacters text={contract.signature} /></code><p>Returns <code>{contract.returnType}</code></p><span className="badge">{contract.inferred ? 'Inferred return type' : 'Declared return type'}</span>{contract.unknown && <><span className="badge caution">Contract unknown</span><p className="panel-note">Omitted or unresolved types limit this contract. No reliable equivalence claim can be made.</p></>}</> : <p className="panel-note">{unit[side] ? 'No contract extracted.' : `Absent ${sideName(side)}.`}</p>}</section>; })}</div>{unit.markers.length > 0 && <div className="change-markers">{unit.markers.map((marker, index) => <span className="badge" key={index}>{marker}</span>)}</div>}<p className="panel-note">Resolved calls within acquired snapshots; dynamic/external uses not included. Counts include before and after source locations.</p>{incoming.length ? groups.filter(group => group.links.length).map(group => <details className="caller-group" key={group.label} open={group.links.length <= 8}><summary>{group.label}<span>{group.links.length}</span></summary>{group.links.map(link => { const caller = report.units.find(unit => unit.id === link.from)!; const edited = editedSites.has(`${link.side}\0${caller[link.side]?.path ?? caller.path}\0${link.line}`); return <button className="caller-button" key={link.id} aria-label={`Open caller ${caller.name} from ${sideName(link.side)} line ${link.line}`} onClick={() => select({ type: 'unit', id: caller.id })}><span><strong>{caller.name}</strong><code>{caller[link.side]?.path ?? caller.path}:{link.line}</code><small>{edited ? 'Call-site line edited' : caller.changed ? 'Caller changed elsewhere' : 'Call-site line untouched'}</small></span><span className="badge">{sideName(link.side)}</span>{link.status === 'removed' && <span className="badge removed">Removed call</span>}<CaretRight size={14} /></button>; })}</details>) : <p className="panel-note">No incoming calls were resolved. This does not establish that the declaration has no users.</p>}<details className="uncertainty-list"><summary>{unresolved.length} unresolved call sites in this declaration</summary>{unresolved.map(link => <div key={link.id} data-testid="call-link" data-side={link.side} data-line={link.line}><code><VisibleCharacters text={link.expression} /></code><span className="badge">{sideName(link.side)}:{link.line}</span>{link.status === 'removed' && <span className="badge removed">Removed call</span>}<p>{link.reason ?? 'Target unavailable in the acquired snapshot.'}</p></div>)}</details><p className="panel-note">Source declarations provide static evidence, not guaranteed runtime dispatch.</p></>;
+}
+
+function App({ initialReport, demoReport = null, online = false, initialError = '', initialDemo = false }: { initialReport: Report | null; demoReport?: Report | null; online?: boolean; initialError?: string; initialDemo?: boolean }) {
+  const [report, setReport] = useState(initialReport); const [demo, setDemo] = useState(initialDemo);
+  const [reading, setReading] = useState<Reading>(() => initialReport ? readState(initialReport.id) : emptyReading());
+  const [selection, setSelection] = useState<Selection>(() => initialReport ? initialSelection(initialReport) : { type: 'file', id: '' });
+  const [revision, setRevision] = useState<Revision>('both'); const [panel, setPanel] = useState<Panel>(null);
+  const [search, setSearch] = useState(''); const [error, setError] = useState(initialError); const [notice, setNotice] = useState('');
+  const [filesOpen, setFilesOpen] = useState(false); const [dragging, setDragging] = useState(false); const [confirmReset, setConfirmReset] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(initialReport?.files.filter(file => file.unitIds.some(id => initialReport.rootIds.includes(id))).map(file => file.id) ?? []));
+  const [peek, setPeek] = useState<Peek | null>(null); const [peekHistory, setPeekHistory] = useState<Peek[]>([]); const [selectionHistory, setSelectionHistory] = useState<SourceHistory[]>([]);
+  const searchRef = useRef<HTMLInputElement>(null); const importRef = useRef<HTMLInputElement>(null); const mainRef = useRef<HTMLElement>(null); const panelRef = useRef<HTMLElement>(null); const peekOrigin = useRef<HTMLElement | null>(null); const panelOrigin = useRef<HTMLElement | null>(null); const dragDepth = useRef(0);
+  const peekOriginId = useRef<string | undefined>(undefined);
+  const pendingSourcePosition = useRef<SourceScroll[] | 'reset' | null>(null);
+  const reviewed = useMemo(() => new Set(reading.reviewed), [reading.reviewed]); const model = useMemo(() => reviewModel(report), [report]);
+  const reviewedCount = [...model.canonical].filter(key => reviewed.has(key)).length; const total = model.canonical.size;
+  const edits = [...new Map((report?.edits ?? []).map(edit => [edit.id, edit])).values()]; const reviewedEdits = edits.filter(edit => reviewed.has(`unit:${edit.unitId}`)).length;
+  const unit = selection.type === 'unit' ? report?.units.find(unit => unit.id === selection.id) : undefined;
+  const file = selection.type === 'file' ? report?.files.find(file => file.id === selection.id) : unit?.kind === 'file' ? report?.files.find(file => file.unitIds.includes(unit.id)) : undefined;
+  const sourceFile = file ?? report?.files.find(file => file.path === unit?.path || file.oldPath === unit?.path);
+  const rows = useMemo(() => unit ? codeDiff(unit.base, unit.head) : [], [unit]);
+  const links = report?.links.filter(link => link.from === unit?.id) ?? [];
+  const peekUnit = report?.units.find(unit => unit.id === peek?.unitId);
+  const peekSide = peek?.link.side ?? 'head';
+  const peekRows = useMemo(() => {
+    const code = peekUnit?.[peekSide];
+    if (!code) return [];
+    const paths = new Map(report?.files.map(file => [file.id, peekSide === 'base' ? file.oldPath ?? file.path : file.path]) ?? []);
+    const changed = new Set(report?.edits.filter(edit => edit.side === peekSide && paths.get(edit.fileId) === code.path).map(edit => edit.line) ?? []);
+    return snapshotRows(code.text, code.startLine, peekSide, changed);
+  }, [peekUnit, peekSide, report]);
+  const currentKeys = file ? model.fileKeys(file) : unit ? model.unitKeys(unit) : [];
+  const currentReviewed = !!currentKeys.length && currentKeys.every(key => reviewed.has(key));
+  const typesIncomplete = !!unit && (!!unit.contract?.base?.unknown || !!unit.contract?.head?.unknown || links.some(link => link.evidence === 'unresolved'));
+  const callerCount = report?.links.filter(link => link.to === unit?.id && link.evidence === 'resolved').length ?? 0;
+  const tree = useMemo(() => directoryTree(report?.files ?? []), [report]);
+  const primaryScrollers = () => [...(mainRef.current?.querySelectorAll<HTMLElement>('.unit-reader .source-scroll, .file-reader .source-scroll, .file-reader .raw-file-scroll') ?? [])];
+
+  const closePeek = (restore = true) => {
+    setPeek(null); setPeekHistory([]);
+    if (restore) requestAnimationFrame(() => {
+      const origin = peekOrigin.current?.isConnected ? peekOrigin.current : [...(mainRef.current?.querySelectorAll<HTMLElement>('.unit-reader [data-call-id]') ?? [])].find(element => element.dataset.callId === peekOriginId.current);
+      origin?.focus({ preventScroll: true });
     });
+  };
+  const select = (next: Selection, remember = false) => {
+    if (remember) {
+      const current: SourceHistory = { selection, revision, scrolls: primaryScrollers().map(element => ({ top: element.scrollTop, left: element.scrollLeft })), peek, peekHistory, originId: peekOriginId.current };
+      setSelectionHistory(previous => [...previous, current]);
+    } else setSelectionHistory([]);
+    pendingSourcePosition.current = 'reset';
+    setSelection(next); setPeek(null); setPeekHistory([]); setFilesOpen(false); setPanel(null); setNotice('');
+    const nextUnit = next.type === 'unit' ? report?.units.find(unit => unit.id === next.id) : undefined;
+    const owner = next.type === 'file' ? report?.files.find(file => file.id === next.id) : report?.files.find(file => file.path === nextUnit?.path || file.oldPath === nextUnit?.path);
+    if (owner) setExpanded(previous => new Set([...previous, owner.id]));
+  };
+  const openPeek: SourceProps['onPeek'] = (link, origin) => {
+    if (!link.to) return;
+    if (!peek) { peekOrigin.current = origin; peekOriginId.current = link.id; setPeekHistory([]); } else if (peek.link.id !== link.id) setPeekHistory(previous => [...previous, peek]);
+    setPeek({ link, unitId: link.to });
+  };
+  const openPanel = (next: Panel, origin?: HTMLElement) => { panelOrigin.current = origin ?? null; setPanel(panel === next ? null : next); };
+  const closePanel = () => { setPanel(null); setConfirmReset(false); requestAnimationFrame(() => panelOrigin.current?.isConnected && panelOrigin.current.focus()); };
+  const mark = (keys: string[], checked: boolean) => setReading(previous => ({ ...previous, reviewed: checked ? [...new Set([...previous.reviewed, ...keys])] : previous.reviewed.filter(key => !keys.includes(key)) }));
+  const nextUnreviewed = () => {
+    if (!report) return;
+    const queue: { selection: Selection; keys: string[] }[] = [];
+    report.files.forEach(file => model.fileKeys(file).forEach(key => {
+      const owner = key.startsWith('unit:') ? report.units.find(unit => `unit:${unit.id}` === key) : undefined;
+      const target: Selection = owner && owner.kind !== 'file' ? { type: 'unit', id: owner.id } : { type: 'file', id: file.id };
+      const existing = queue.find(item => item.selection.type === target.type && item.selection.id === target.id);
+      if (existing) existing.keys.push(key); else queue.push({ selection: target, keys: [key] });
+    }));
     const index = queue.findIndex(item => item.selection.type === selection.type && item.selection.id === selection.id);
     const next = [...queue.slice(index + 1), ...queue.slice(0, index + 1)].find(item => item.keys.some(key => !reviewed.has(key)));
     if (next) { setSearch(''); select(next.selection); }
   };
-  const mark = (keys: string[], checked: boolean) => setReading(prev => ({ ...prev, reviewed: checked ? [...new Set([...prev.reviewed, ...keys])] : prev.reviewed.filter(k => !keys.includes(k)) }));
-  const shared: Shared = { report, revision, reviewed, mark, select, unitKeys, fileKeys };
 
-  useEffect(() => {
-    try { localStorage.setItem(`flow-review:${report.id}`, JSON.stringify(reading)); }
-    catch { setNotice('Reading state could not be saved in this browser. Export your notes before closing.'); }
-  }, [report.id, reading]);
+  useEffect(() => { if (!report) return; try { localStorage.setItem(`flow-review:${report.id}`, JSON.stringify(reading)); } catch { setNotice('Browser storage is unavailable. Export your notes before closing.'); } }, [report?.id, reading]);
+  useLayoutEffect(() => {
+    const position = pendingSourcePosition.current;
+    if (!position) return;
+    primaryScrollers().forEach((element, index) => {
+      const previous = position === 'reset' ? undefined : position[index];
+      element.scrollTop = previous?.top ?? 0;
+      element.scrollLeft = previous?.left ?? 0;
+    });
+    pendingSourcePosition.current = null;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [selection, revision, report?.id]);
+  useEffect(() => { if (panel) panelRef.current?.querySelector<HTMLElement>('button, input, textarea, a[href]')?.focus({ preventScroll: true }); }, [panel]);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === '/' && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)) { event.preventDefault(); searchRef.current?.focus(); }
-      if (event.key === 'Escape') { setConfirmReset(false); if (document.activeElement === searchRef.current) { setSearch(''); searchRef.current?.blur(); } }
+      const editing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement;
+      if (panel && event.key === 'Tab') {
+        const controls = [...(panelRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, textarea, a[href], summary') ?? [])].filter(element => element.getClientRects().length);
+        const first = controls[0]; const last = controls.at(-1);
+        if (first && (event.shiftKey ? document.activeElement === first : document.activeElement === last)) { event.preventDefault(); (event.shiftKey ? last : first)?.focus(); }
+      }
+      if (event.key === '/' && !editing) { event.preventDefault(); searchRef.current?.focus(); }
+      if (event.key === 'Escape') { if (panel) closePanel(); else if (peek) closePeek(); else { setFilesOpen(false); if (document.activeElement === searchRef.current) { setSearch(''); searchRef.current?.blur(); } } }
+      if (event.key.toLowerCase() === 'n' && !editing && !event.metaKey && !event.ctrlKey && !panel) { event.preventDefault(); nextUnreviewed(); }
     };
     window.addEventListener('keydown', handler); return () => window.removeEventListener('keydown', handler);
-  }, []);
-
-  async function importFile(event: React.ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget; const candidate = input.files?.[0]; if (!candidate) return;
+  });
+  function activateReport(next: Report, isDemo = false) {
+    pendingSourcePosition.current = 'reset';
+    setReport(next); setDemo(isDemo); setReading(readState(next.id)); setSelection(initialSelection(next)); setExpanded(new Set(next.files.filter(file => file.unitIds.some(id => next.rootIds.includes(id))).map(file => file.id)));
+    setPeek(null); setPeekHistory([]); setSelectionHistory([]); setSearch(''); setRevision('both'); setPanel(null); setConfirmReset(false); setNotice(''); setError('');
+  }
+  async function loadFile(candidate: File) {
     setError('');
     try {
       if (candidate.size > 30 * 1024 * 1024) throw new Error('This JSON file exceeds the 30 MB import limit. Generate a smaller report.');
       const next = validateReport(JSON.parse(await candidate.text()));
-      // Set state and report together so reading state cannot leak between snapshots.
-      setReport(next); setReading(readState(next.id)); setSelection(initialSelection(next));
-      setSearch(''); setRevision('both'); setShowEvidence(false); setConfirmReset(false); setNotice(`Imported ${next.title}. All data stays in this browser.`);
-    } catch (e) { setError(`Could not import report. ${e instanceof Error ? e.message : 'Invalid JSON.'}`); }
-    input.value = '';
+      activateReport(next); setNotice(`Opened ${next.title}. Your report stays in this browser.`);
+    } catch (error) { setError(`Could not import report. ${error instanceof Error ? error.message : 'Invalid JSON.'}`); }
   }
-
+  async function importFile(event: React.ChangeEvent<HTMLInputElement>) { const input = event.currentTarget; const candidate = input.files?.[0]; if (candidate) await loadFile(candidate); input.value = ''; }
   function exportNotes() {
-    const note = { reportId: report.id, title: report.title, base: report.repository.base, head: report.repository.head, reviewed: [...canonical].filter(k => reviewed.has(k)), notes: reading.notes };
-    const blob = new Blob([JSON.stringify(note, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'flow-review-reading-notes.json'; anchor.click(); URL.revokeObjectURL(url);
-    setNotice('Reading notes exported.');
+    if (!report) return;
+    const note = { reportId: report.id, title: report.title, base: report.repository.base, head: report.repository.head, reviewed: [...model.canonical].filter(key => reviewed.has(key)), notes: reading.notes };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(note, null, 2)], { type: 'application/json' })); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'flow-review-reading-notes.json'; anchor.click(); URL.revokeObjectURL(url); setNotice('Reading notes exported.');
   }
 
-  return <>
+  return <div className="review-desk" onDragEnter={event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); dragDepth.current++; setDragging(true); } }} onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault(); }} onDragLeave={event => { event.preventDefault(); dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setDragging(false); }} onDrop={event => { if (!event.dataTransfer.types.includes('Files')) return; event.preventDefault(); dragDepth.current = 0; setDragging(false); const candidates = [...event.dataTransfer.files]; if (candidates.length !== 1) setError('Drop one report JSON file at a time.'); else void loadFile(candidates[0]); }}>
     <a className="skip-link" href="#reading-workspace">Skip to code</a>
-    <header className="app-header"><a className="brand" href="#"><span className="brand-mark"><Icon name="branch" /></span><span>flow<span className="brand-light">review</span></span></a><div className="repository-title"><span className="eyebrow">{report.repository.name}</span><h1>{report.title}</h1></div><div className="header-tools"><label className="import-button">Import JSON<input type="file" accept="application/json,.json" aria-label="Import report JSON" onChange={importFile} /></label><button onClick={() => setShowNotes(!showNotes)} aria-expanded={showNotes}>Reading notes</button></div></header>
-    <div className="report-strip"><span className="snapshot-label">Snapshot</span><code title={report.repository.base}>{shortHash(report.repository.base)}</code><span aria-hidden="true">→</span><code title={report.repository.head}>{shortHash(report.repository.head)}</code><span className="strip-divider" /><span>{report.files.length} changed files</span><span>{report.coverage.totalHunks} original hunks</span><button className="evidence-button" aria-expanded={showEvidence} onClick={() => setShowEvidence(!showEvidence)}>{report.coverage.unresolvedCalls} unresolved repository call sites<Icon name="arrow" /></button>{report.repository.dirty && <span className="badge caution">Local changes excluded</span>}<span className="offline-label">Offline reader</span></div>
-    {error && <div className="message error" role="alert">{error}<button aria-label="Dismiss error" onClick={() => setError('')}><Icon name="close" /></button></div>}
-    {notice && <div className="message notice" role="status">{notice}<button aria-label="Dismiss notice" onClick={() => setNotice('')}><Icon name="close" /></button></div>}
-    {showEvidence && <section className="evidence-panel" aria-label="Analysis evidence"><div><span className="eyebrow">What this report knows</span><h2>Static navigation, complete change inventory</h2><p>{report.coverage.note}</p><p>The repository call-site count includes unchanged code in both snapshots. Resolved calls point to declarations found by static analysis. Runtime dispatch, external behavior, and omitted callbacks can differ. The full file ledger remains the review boundary.</p></div><div className="analysis-provenance"><span>Flow Review {report.analysis.toolVersion} · TypeScript {report.analysis.typescriptVersion}</span><span>Merge base <code>{report.repository.mergeBase}</code></span><span>Analysis strict null checks: before {report.analysis.baseStrictNullChecks ? 'on' : 'off'}, after {report.analysis.headStrictNullChecks ? 'on' : 'off'}</span><span>{report.analysis.scope}</span></div><div className="evidence-counts"><span><strong>{report.coverage.analyzedFiles}</strong> analyzed files</span><span><strong>{report.coverage.mappedHunks}/{report.coverage.totalHunks}</strong> hunks accounted for</span><span className={report.coverage.complete ? '' : 'deletion'}>{report.coverage.complete ? 'Inventory complete' : 'Inventory incomplete'}</span></div>{report.diagnostics.length > 0 && <details><summary>{report.diagnostics.length} analysis diagnostics</summary><ul>{report.diagnostics.map((d, i) => <li key={i}><span className="badge">{sideName(d.side)}</span> {d.path && <code>{d.path}</code>} {d.message}</li>)}</ul></details>}</section>}
-    {showNotes && <section className="notes-panel" aria-label="Reading notes"><div><label htmlFor="reading-notes">Private reading notes</label><p>Saved with this exact snapshot in your browser.</p></div><textarea id="reading-notes" value={reading.notes} onChange={e => setReading(prev => ({ ...prev, notes: e.target.value }))} placeholder="Questions, behavior changes, and follow-ups…" rows={3} /><button onClick={exportNotes}>Export reading notes</button></section>}
-    <div className="workspace">
-      <aside className="flow-sidebar"><div className="search-box"><Icon name="search" /><input ref={searchRef} value={search} onChange={e => setSearch(e.target.value)} placeholder="Find a symbol or file" aria-label="Search changes" /><kbd>/</kbd>{search && <button aria-label="Clear search" onClick={() => setSearch('')}><Icon name="close" /></button>}</div><nav aria-label="Flow navigation"><div className="nav-section-label"><span>Suggested starts</span><span>{roots.length}</span></div><p className="sidebar-help">Choose an entry point, then follow calls. This order is a reading suggestion, not importance.</p>{roots.map(u => <button key={u.id} className={`flow-item root-item ${selection.type === 'unit' && selection.id === u.id ? 'active' : ''}`} aria-label={`Start at ${u.name}`} aria-current={selection.type === 'unit' && selection.id === u.id ? 'true' : undefined} onClick={() => select({ type: 'unit', id: u.id })}><span className="flow-icon"><Icon name="branch" /></span><span><strong>{u.name}</strong><small>{u.path}</small></span><Icon name="arrow" /></button>)}{!roots.length && <p className="sidebar-empty">No suggested entry points{search ? ' match your search' : ' in this snapshot'}.</p>}<div className="nav-section-label all-symbols"><span>Changed declarations</span><span>{filteredUnits.length}</span></div>{filteredUnits.map(u => <button key={u.id} className={`flow-item ${selection.type === 'unit' && selection.id === u.id ? 'active' : ''}`} aria-label={`Open ${u.name}`} aria-current={selection.type === 'unit' && selection.id === u.id ? 'true' : undefined} onClick={() => select({ type: 'unit', id: u.id })}><span className={`read-dot ${unitKeys(u).length && unitKeys(u).every(k => reviewed.has(k)) ? 'done' : ''}`} aria-label={!unitKeys(u).length ? 'Context only' : unitKeys(u).every(k => reviewed.has(k)) ? 'Reviewed' : 'Unread'} /><span><strong>{u.name}</strong><small>{u.path}</small></span><span className="kind-tag">{u.kind === 'file' ? 'file' : u.kind === 'method' ? 'm' : 'ƒ'}</span></button>)}{!filteredUnits.length && <p className="sidebar-empty">No changed declarations{search ? ' match your search' : ''}.</p>}</nav><div className="sidebar-footnote">Opening code does not mark it reviewed.<br />Reading paths never replace the file inventory.</div></aside>
-      <main id="reading-workspace" className="reading-workspace" ref={contentRef} tabIndex={-1}><div className="reader-toolbar"><div className="breadcrumb"><span>{report.repository.name}</span><Icon name="arrow" /><strong>{unit?.name ?? file?.path ?? 'Changes'}</strong></div><div className="reader-actions"><button className="next-unreviewed" disabled={!total || reviewedCount === total} onClick={nextUnreviewed}>Next unreviewed<Icon name="arrow" /></button><div className="revision-control" role="group" aria-label="Code revision">{(['base', 'both', 'head'] as Revision[]).map(side => <button key={side} aria-pressed={revision === side} className={revision === side ? 'selected' : ''} onClick={() => setRevision(side)}>{side === 'base' ? 'Before' : side === 'head' ? 'After' : 'Both'}</button>)}</div></div></div><div className="reading-intro"><span className="eyebrow">{file ? 'Inventory view' : 'Follow the change'}</span><p>{file ? 'Original hunks are the authoritative record. Review every edit, including changes outside the flow.' : 'Read the source. Expand a call to keep its declaration and the caller in view.'}</p></div>{file ? <FileCard key={`${report.id}:${file.id}`} file={file} shared={shared} /> : unit ? <FunctionCard key={`${report.id}:${unit.id}`} unit={unit} shared={shared} ancestors={[unit.id]} /> : <div className="empty-workspace"><h2>No changes in this report</h2><p>Import another report to start reading.</p></div>}<div className="reader-bottom"><span className="side-dot base" /> Before <span className="side-dot head" /> After <span>Static links show source declarations, not guaranteed runtime execution.</span></div></main>
-      <aside className="ledger-sidebar"><header className="ledger-header"><span className="eyebrow">Complete change ledger</span><h2>Every file. Every edit.</h2><div className="review-progress"><span><strong>{reviewedCount}</strong> / {total} review units</span><span>{total ? Math.round(reviewedCount / total * 100) : 0}%</span></div><progress aria-label="Review progress" value={reviewedCount} max={Math.max(total, 1)} /><div className="line-review-progress" aria-label="Changed line progress"><strong>{reviewedEdits}</strong> / {uniqueEdits.length} changed lines reviewed</div><p>Mark a declaration or whole file when reviewed. Changed lines count once. File metadata needs explicit file review.</p></header><nav aria-label="Change ledger">{filteredFiles.map(f => { const keys = fileKeys(f); const done = keys.every(k => reviewed.has(k)); const partial = keys.some(k => reviewed.has(k)); return <div className={`ledger-file ${selection.type === 'file' && selection.id === f.id ? 'active' : ''}`} key={f.id}><button className="ledger-file-open" aria-label={`Open file ${f.path}`} aria-current={selection.type === 'file' && selection.id === f.id ? 'true' : undefined} onClick={() => select({ type: 'file', id: f.id })}><Icon name="file" /><span><strong>{f.path}</strong><small><span className="file-status">{f.status}</span><span className="addition">+{f.additions}</span><span className="deletion">−{f.deletions}</span></small></span></button><div className="ledger-file-bottom"><span>{f.binary ? 'Binary · raw inventory' : `${f.hunks.length} hunks · ${keys.length} review ${keys.length === 1 ? 'unit' : 'units'}`}{partial && !done ? ' · partly read' : ''}</span><button className={`ledger-review ${done ? 'is-reviewed' : ''}`} aria-label={`${done ? 'Mark file unread' : 'Mark file reviewed'}: ${f.path}`} aria-pressed={done} onClick={() => mark(keys, !done)}><Icon name="check" /><span>{done ? 'Reviewed' : 'Review'}</span></button></div></div>; })}{!filteredFiles.length && <p className="sidebar-empty">No files match your search.</p>}</nav><div className="ledger-footer"><button className="reset-button" onClick={() => setConfirmReset(!confirmReset)} aria-expanded={confirmReset}>Reset reading state</button>{confirmReset && <div className="reset-confirm"><p>Clear review marks and notes for this snapshot?</p><button onClick={() => { setReading(emptyReading()); setConfirmReset(false); setNotice('Reading state reset for this snapshot.'); }}>Clear marks and notes</button><button onClick={() => setConfirmReset(false)}>Cancel</button></div>}<small>Snapshot generated {new Date(report.generatedAt).toLocaleString()}</small></div></aside>
-    </div>
-    <footer className="app-footer"><span>Flow Review · A human code reader</span><span>Data stays local · No automated approval verdicts</span></footer>
-  </>;
+    <input className="sr-only" ref={importRef} type="file" accept="application/json,.json" aria-label="Import report JSON" onChange={importFile} />
+    <header className="desk-topbar"><button className="icon-button mobile-files" aria-label="Toggle files" aria-expanded={filesOpen} onClick={() => setFilesOpen(!filesOpen)}><List size={20} /></button><a className="brand" href="#">flowreview</a><span className="topbar-divider" /><h1>{report?.title ?? 'Open a review report'}</h1>{demo && <span className="demo-tag">Demo</span>}<div className="topbar-end">{report && <span className="overall-progress" aria-label="Review progress"><strong>{reviewedCount}</strong> / {total} reviewed<progress className="sr-only" value={reviewedCount} max={Math.max(total, 1)} /></span>}<button className="topbar-import" onClick={() => importRef.current?.click()}><UploadSimple size={16} />Open JSON</button><button className="icon-button" aria-label="Review menu" aria-expanded={panel === 'menu'} onClick={event => openPanel('menu', event.currentTarget)}><DotsThree size={22} weight="bold" /></button></div></header>
+    {error && <div className="desk-message error" role="alert">{error}<button className="icon-button" aria-label="Dismiss error" onClick={() => setError('')}><X size={16} /></button></div>}{notice && <div className="desk-message notice" role="status">{notice}<button className="icon-button" aria-label="Dismiss notice" onClick={() => setNotice('')}><X size={16} /></button></div>}
+    {!report ? <main className="import-workspace" id="reading-workspace"><UploadSimple size={32} /><h2>Open your review report</h2><p>Analyze the repository locally, then open the generated JSON here.</p><div className="entry-actions"><button className="primary-button" onClick={() => importRef.current?.click()}>Choose report JSON</button>{demoReport && <button className="secondary-button" onClick={() => activateReport(demoReport, true)}>Try demo</button>}</div><span>or drop one JSON file anywhere</span><p className="privacy-note">Your source stays in this browser. This reader does not fetch a pull request or upload your report.</p><div className="entry-setup">{online && <a className="secondary-button" href="/downloads/flow-review-cli.tgz" download><UploadSimple size={15} />Download analyzer</a>}<button onClick={event => openPanel('generate', event.currentTarget)}>How to generate a report</button></div></main> : <div className="desk-body">
+      {filesOpen && <button className="mobile-nav-backdrop" aria-label="Close files" onClick={() => setFilesOpen(false)} />}
+      <aside className={`files-sidebar ${filesOpen ? 'mobile-open' : ''}`}><div className="navigator-heading"><span>Files</span><span>{report.files.length}</span></div><div className="search-box"><MagnifyingGlass size={15} /><input ref={searchRef} aria-label="Search changes" placeholder="Find file or function" value={search} onChange={event => setSearch(event.target.value)} />{search ? <button className="icon-button" aria-label="Clear search" onClick={() => setSearch('')}><X size={12} /></button> : <kbd>/</kbd>}</div><nav aria-label="Change navigation"><DirectoryBranch directory={tree} root props={{ report, selected: selection, reviewed, model, search, expanded, setExpanded, select: next => select(next) }} /></nav><div className="navigation-footnote">{report.coverage.complete ? 'All changed files included.' : 'Inventory incomplete.'}<br />Reading order is a suggestion, not importance.</div></aside>
+      <main className="desk-main" id="reading-workspace" ref={mainRef} tabIndex={-1}><div className="code-toolbar"><div className="source-breadcrumb">{selectionHistory.length > 0 && <button className="icon-button" aria-label="Back to previous source" onClick={() => { const previous = selectionHistory.at(-1)!; pendingSourcePosition.current = previous.scrolls; setSelectionHistory(history => history.slice(0, -1)); setRevision(previous.revision); setSelection(previous.selection); setPeek(previous.peek); setPeekHistory(previous.peekHistory); peekOriginId.current = previous.originId; setPanel(null); }}><ArrowLeft size={16} /></button>}{(unit?.path ?? file?.path ?? '').split('/').map((part, index) => <React.Fragment key={index}>{index > 0 && <CaretRight size={12} />}<span>{part}</span></React.Fragment>)}{unit?.kind !== 'file' && unit && <><CaretRight size={12} /><strong>{unit.name}</strong></>}</div><div className="toolbar-actions">{unit?.kind !== 'file' && unit && <><button className={`context-button ${typesIncomplete ? 'types-incomplete' : ''}`} aria-label="Contract & callers" aria-expanded={panel === 'contracts'} onClick={event => openPanel('contracts', event.currentTarget)}>{typesIncomplete && <WarningCircle size={15} weight="fill" />}<span>{typesIncomplete ? 'Types incomplete' : 'Contract'}</span><CaretDown size={13} /></button><button className="caller-toggle" aria-label={`Callers ${callerCount}`} onClick={event => openPanel('contracts', event.currentTarget)}>Callers <span>{callerCount}</span></button></>}<div className="revision-control" role="group" aria-label="Code revision">{(['base', 'both', 'head'] as Revision[]).map(side => <button key={side} className={revision === side ? 'selected' : ''} aria-pressed={revision === side} onClick={() => setRevision(side)}>{side === 'base' ? 'Before' : side === 'head' ? 'After' : 'Both'}</button>)}</div>{currentKeys.length > 0 ? <button className={`primary-button review-button ${currentReviewed ? 'is-reviewed' : ''}`} aria-label={`${currentReviewed ? file ? 'Mark file unread' : 'Mark unread' : file ? 'Mark file reviewed' : 'Mark reviewed'}: ${file?.path ?? unit?.name ?? ''}`} aria-pressed={currentReviewed} onClick={() => mark(currentKeys, !currentReviewed)}>{currentReviewed && <Check size={15} />}{currentReviewed ? 'Reviewed' : 'Mark reviewed'}</button> : <span className="context-only">Context only</span>}<button className="next-button" aria-label="Next unreviewed" disabled={!total || reviewedCount === total} onClick={nextUnreviewed}>Next<CaretRight size={17} /></button></div></div>
+        <div className="code-workspace">{file ? <FileReader key={`${report.id}:${file.id}`} file={file} revision={revision} onPeek={openPeek} /> : unit ? <article className="unit-reader" aria-label={`${unit.name} source`}><SourceView rows={rows} revision={revision} links={links} onPeek={openPeek} activePeek={peek?.link.id} />{sourceFile && <button className="raw-file-link" onClick={() => select({ type: 'file', id: sourceFile.id })}>Raw file diff<ArrowSquareOut size={13} /></button>}</article> : <div className="empty-report"><h2>{report.coverage.complete ? 'No changes in this report' : 'Inventory incomplete'}</h2><p>{report.coverage.complete ? 'Open another report to begin a review.' : 'No changes were acquired. Inspect analysis details before treating this snapshot as complete.'}</p><button onClick={() => importRef.current?.click()}>Open JSON</button></div>}
+          {peek && peekUnit && <aside className="declaration-peek" aria-label="Declaration peek"><header><div><CaretDown size={15} /><strong>{sideName(peek.link.side)}</strong><span>·</span><code>{peekUnit[peek.link.side]?.path ?? peekUnit.path}</code><CaretRight size={12} /><strong>{peekUnit.name}</strong><span className="peek-status">{peek.link.status === 'removed' ? 'Removed call' : 'Static target'} · call {sideName(peek.link.side)}:{peek.link.line}</span>{!peekUnit.changed && <span className="badge">Unchanged context</span>}</div><div className="peek-controls">{peekHistory.length > 0 && <button aria-label="Back in peek" onClick={() => { setPeek(peekHistory.at(-1)!); setPeekHistory(history => history.slice(0, -1)); }}><ArrowLeft size={15} />Back</button>}<button aria-label={`Open target ${peekUnit.name}`} onClick={() => select({ type: 'unit', id: peekUnit.id }, true)}>Open<ArrowSquareOut size={15} /></button><button className="icon-button" aria-label="Close peek" onClick={() => closePeek()}><X size={18} /></button></div></header><SourceView rows={peekRows} revision={peek.link.side} links={report.links.filter(link => link.from === peekUnit.id && link.side === peek.link.side)} onPeek={openPeek} activePeek={peek.link.id} compact /></aside>}
+        </div>
+      </main>
+    </div>}
+    <footer className="desk-footer"><div><GitBranch size={15} /><span>{report ? demo ? 'Demo snapshot' : 'Local snapshot' : 'Local analysis · browser reader'}</span>{report && <code>{shortHash(report.repository.base)} → {shortHash(report.repository.head)}</code>}{report && <button onClick={event => openPanel('analysis', event.currentTarget)} aria-label="Analysis details">Analysis details</button>}</div><div>{report && <span aria-label="Changed line progress">{reviewedEdits} / {edits.length} changed lines reviewed</span>}<span className="keyboard-hints"><kbd>n</kbd> Next <kbd>esc</kbd> Close</span></div></footer>
+    {panel && <div className="context-overlay" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closePanel(); }}><section ref={panelRef} className={`context-panel ${panel === 'menu' ? 'menu-panel' : ''}`} role="dialog" aria-modal="true" aria-label={panel === 'contracts' ? 'Contract & callers' : panel === 'analysis' ? 'Analysis evidence' : panel === 'notes' ? 'Reading notes' : panel === 'generate' ? 'Generate a report' : 'Review menu'}><button className="icon-button panel-close" aria-label="Close panel" onClick={closePanel}><X size={19} /></button>{panel === 'contracts' && unit && report ? <ContractPanel unit={unit} report={report} revision={revision} select={next => select(next, true)} onPeek={openPeek} /> : panel === 'analysis' && report ? <><h2>Analysis details</h2><p className="panel-note">{report.coverage.note}</p><dl className="analysis-facts"><dt>Snapshot</dt><dd><code>{report.repository.base} → {report.repository.head}</code></dd><dt>Merge base</dt><dd><code>{report.repository.mergeBase}</code></dd><dt>Versions</dt><dd>Flow Review {report.analysis.toolVersion} · TypeScript {report.analysis.typescriptVersion}</dd><dt>Strict null checks</dt><dd>Analysis before {report.analysis.baseStrictNullChecks ? 'on' : 'off'}, after {report.analysis.headStrictNullChecks ? 'on' : 'off'}</dd><dt>Inventory</dt><dd>{report.files.length} files · {report.coverage.mappedHunks}/{report.coverage.totalHunks} hunks accounted for · {report.coverage.complete ? 'Inventory complete' : 'Inventory incomplete'}</dd><dt>Unresolved calls</dt><dd>{report.coverage.unresolvedCalls} repository call sites, including unchanged code and both snapshots</dd></dl><p className="panel-note">{report.analysis.scope}</p><p className="panel-note">Resolved calls are static source declarations, not guaranteed runtime execution. No automated approval verdicts.</p>{report.repository.dirty && <p className="badge caution">Local changes excluded</p>}{report.diagnostics.length > 0 && <details><summary>{report.diagnostics.length} analysis diagnostics</summary>{report.diagnostics.map((diagnostic, index) => <p className="diagnostic" key={index}><span className="badge">{sideName(diagnostic.side)}</span> <code>{diagnostic.path}</code> {diagnostic.message}</p>)}</details>}</> : panel === 'notes' ? <><h2>Private reading notes</h2><p className="panel-note">Saved for this snapshot in your browser. Nothing is sent to a server.</p><label className="sr-only" htmlFor="reading-notes">Reading notes</label><textarea id="reading-notes" rows={10} value={reading.notes} placeholder="Questions, changed behavior, and follow-ups…" onChange={event => setReading(previous => ({ ...previous, notes: event.target.value }))} /><button className="secondary-button" onClick={exportNotes} disabled={!report}>Export reading notes</button></> : panel === 'generate' ? <><h2>Generate a review report</h2><p className="panel-note">Analysis runs on your computer. This online reader opens the generated JSON; it does not fetch or upload source.</p><ol className="generate-steps"><li>Install Node.js 22 or newer and Git 2.52 or newer. For GitHub pull requests, install the GitHub CLI and sign in with <code>gh auth login</code>.</li><li>{online ? <a href="/downloads/flow-review-cli.tgz" download>Download the analyzer</a> : 'Download the analyzer from the hosted Flow Review reader.'} and install it:<pre><code>npm install --global ./flow-review-cli.tgz</code></pre></li><li>Generate a report for a GitHub pull request:<pre><code>flow-review pr --url &lt;github-pr-url&gt; --out review.html</code></pre></li><li>Open <code>review.html</code> offline, or choose <code>review.json</code> in this reader.</li></ol><p className="panel-note">A private repository needs your existing GitHub access. Keep reports private when the source is private.</p></> : <><h2>Review menu</h2><button className="menu-item" onClick={() => { closePanel(); importRef.current?.click(); }}><UploadSimple size={17} />Open report JSON</button><button className="menu-item" onClick={() => setPanel('generate')}>How to generate a report</button><button className="menu-item" disabled={!report} onClick={() => setPanel('notes')}>Reading notes</button><button className="menu-item" disabled={!report} onClick={() => setPanel('analysis')}>Analysis details</button><button className="menu-item" disabled={!report} onClick={() => setConfirmReset(!confirmReset)}>Reset reading state</button>{confirmReset && <div className="reset-confirm"><p>Clear review marks and notes for this snapshot?</p><button className="secondary-button" onClick={() => { setReading(emptyReading()); closePanel(); setNotice('Reading state reset for this snapshot.'); }}>Clear marks and notes</button><button onClick={() => setConfirmReset(false)}>Cancel</button></div>}<p className="panel-note">Opening a file or a peek never marks it reviewed. Whole-file review includes text and metadata.</p></>}</section></div>}
+    {dragging && <div className="drop-overlay"><UploadSimple size={34} /><strong>Drop report JSON to open</strong><span>One file · source stays in this browser</span></div>}
+  </div>;
 }
 
 const root = document.getElementById('root');
 if (root) {
-  try {
-    const script = document.getElementById('report-data');
-    if (!script) throw new Error('The report-data payload is missing. Regenerate this report.');
-    const report = validateReport(JSON.parse(script.textContent ?? ''));
-    createRoot(root).render(<App initialReport={report} />);
-  } catch (error) {
-    createRoot(root).render(<div className="startup-error" role="alert"><span className="eyebrow">Flow Review</span><h1>This report could not be opened</h1><p>{error instanceof Error ? error.message : 'Invalid report data.'}</p><p>Generate a new report with the current Flow Review CLI.</p></div>);
+  const script = document.getElementById('report-data');
+  const demoScript = document.getElementById('demo-data');
+  let report: Report | null = null; let demoReport: Report | null = null; let error = '';
+  if (script) {
+    try { report = validateReport(JSON.parse(script.textContent ?? '')); }
+    catch (caught) { error = `This report could not be opened. ${caught instanceof Error ? caught.message : 'Invalid report data.'} Open a current report JSON to recover.`; }
   }
+  if (demoScript) {
+    try { demoReport = validateReport(JSON.parse(demoScript.textContent ?? '')); }
+    catch { error = error || 'The demo could not be opened. Choose a current report JSON to begin.'; }
+  }
+  createRoot(root).render(<App initialReport={report} demoReport={demoReport} online={root.getAttribute('data-online') === 'true'} initialError={error} initialDemo={script?.getAttribute('data-demo') === 'true'} />);
 }

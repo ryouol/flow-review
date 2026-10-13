@@ -1,10 +1,14 @@
 # Flow Review
 
-Read a TypeScript pull request by following the changed logic across files. Keep a caller visible while opening the before/after code of a function it calls, and keep every remaining file in a separate review ledger.
+Read a TypeScript pull request by following the changed logic across files. One complete file/function navigator sits beside the before/after code. Open a compact declaration peek without losing the caller.
 
-Flow Review is a local CLI and a self-contained browser report. It needs no LLM, API key, hosted service, or repository upload. The GitHub PR command fetches source to your machine; the generated reader itself works offline.
+Flow Review has two parts: a local Node/Git analyzer and a static browser reader. The website imports a generated JSON report in the browser; it has no PR-analysis API, account system, billing, or repository upload. The analyzer needs no LLM or API key. GitHub PR source is fetched to your machine, and the generated HTML reader also works offline.
+
+For the hosted reader, download its analyzer package, install it with `npm install --global ./flow-review-cli.tgz`, and generate a report with `flow-review pr --url https://github.com/owner/repo/pull/123 --out review.html`. Open `review.html` offline or import `review.json` into the website. The hosted demo contains only illustrative checkout code.
 
 ## Try the reader
+
+Open the [production reader](https://flow-review-two.vercel.app) and choose Try demo, or download the analyzer and import your own report.
 
 Requires Node.js 22 or newer, npm, and recent Git with `--no-lazy-fetch` support (tested with Git 2.52). GitHub PR URLs additionally require the [GitHub CLI](https://cli.github.com/) signed in to an account with repository access.
 
@@ -35,11 +39,11 @@ Every command writes `.html` and matching `.json` files. Open the HTML directly,
 
 ## How to read a change
 
-1. Choose a suggested starting function, search for a changed declaration, or open a file from the complete ledger.
-2. Read the before/after diff. Expand a source-linked call to open its declaration beneath the caller. Unchanged wrappers remain available when they connect changed functions.
+1. Choose a function or file from the complete navigator, or search for a changed declaration.
+2. Read the before/after diff. Select a source-linked call to open one compact peek beneath the caller. Selecting another call replaces the peek. Unchanged wrappers remain available when they connect changed functions.
 3. Switch between Before, Both, and After. Removed calls retain their base-side locations and targets.
 4. Inspect the contract and callers panel for before/after signatures and resolved incoming callers, including untouched callers. Call-site badges describe edited lines, not a runtime compatibility verdict.
-5. Use the nested call breadcrumb to start a new reading path. Recursive paths and depth limits stay explicit.
+5. Use Open in a peek to make its target the main code view. Back restores the prior reading position. Escape closes the peek and restores focus to its originating call.
 6. Open original file hunks to inspect edits outside the functions, including configuration, dependencies, deleted files, modes, renamed paths, and binary changes.
 7. Explicitly mark a declaration or whole file reviewed. Opening code never marks it reviewed, and shared declarations count once. Export private notes when useful.
 
@@ -76,8 +80,19 @@ npm run check
 
 [Release verification](docs/RELEASE-VERIFICATION.md) records the completed checks and their limits.
 
-The check runs TypeScript checking, the production build, backend/adversarial tests, demo generation, and Chromium interaction tests. Tests cover source-side navigation, change accounting, hostile strings, malformed imports, binary/rename/mode/deleted/symlink files, merge-base comparisons, repeated-call insertions, snapshot persistence, offline opening, and mobile layout.
+The check runs TypeScript checking, the production build, backend/adversarial tests, demo generation, isolated static-site/analyzer export verification, and Chromium interaction tests. Tests cover source-side navigation, change accounting, hostile strings, malformed imports, binary/rename/mode/deleted/symlink files, merge-base comparisons, repeated-call insertions, snapshot persistence, offline opening, and mobile layout.
 
 Six pinned real public PRs were independently compared with Git and exercised in the reader: [real PR validation](docs/REAL-PR-VALIDATION.md). Exact pins, counts, method, findings, and limitations are in [the machine-readable record](docs/real-pr-validation.json). These are software and source-provenance checks, not a human-comprehension experiment. Faster reviews and improved defect detection remain hypotheses.
 
 The design follows research on reviewer navigation and existing tools such as CodeRabbit Change Stack, SemanticDiff, and ChangeViz. It does not claim to invent flow-oriented review. [Acceptance requirements](docs/ACCEPTANCE.md) document the product boundary.
+
+## Build the hosted reader
+
+```sh
+npm run build:site
+npm run preview:site
+```
+
+Preview at `http://127.0.0.1:4173`. Deploy only `dist/site` to Vercel. It contains `index.html`, security-header configuration, and the standalone analyzer archive; no generated private reports, Git caches, source repositories, or credentials. The download bundles its runtime dependencies and their license notices, so visitors do not need access to this private GitHub repository.
+
+Imported source is read in memory and is not uploaded. Reading marks and notes persist in that browser origin under the report snapshot. Clear them from the review menu when needed. Notes and marks are not synchronized between the hosted reader, offline HTML, devices, or GitHub.

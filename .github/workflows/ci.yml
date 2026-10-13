@@ -30,6 +30,10 @@ jobs:
           name: offline-demo
           path: reports/demo.html
       - uses: actions/upload-artifact@v4
+        with:
+          name: production-reader
+          path: dist/site/
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: browser-failure-evidence

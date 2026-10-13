@@ -13,7 +13,7 @@ const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const clones = resolve(process.argv[2] ?? `${project}/tmp/real-pr-validation`);
 const output = resolve(process.argv[3] ?? `${project}/tmp/real-pr-replay`);
 const record = JSON.parse(readFileSync(`${project}/docs/real-pr-validation.json`, 'utf8'));
-const fingerprintPaths = ['src/analyzer.ts', 'src/git.ts', 'src/model.ts', 'src/cli.ts', 'src/github.ts', 'src/render.ts', 'src/validate.ts', 'src/web/main.tsx', 'src/web/styles.css', 'dist/git.js', 'dist/render.js', 'dist/web/client.js', 'dist/web/client.css'];
+const fingerprintPaths = ['src/analyzer.ts', 'src/git.ts', 'src/model.ts', 'src/cli.ts', 'src/github.ts', 'src/render.ts', 'src/validate.ts', 'src/web/main.tsx', 'src/web/styles.css', 'src/web/icons.ts', 'scripts/build-site.mjs', 'dist/git.js', 'dist/render.js', 'dist/web/client.js', 'dist/web/client.css'];
 const fingerprints = Object.fromEntries(fingerprintPaths.map(path => [path, createHash('sha256').update(readFileSync(`${project}/${path}`)).digest('hex')]));
 mkdirSync(output, { recursive: true });
 const results = [];

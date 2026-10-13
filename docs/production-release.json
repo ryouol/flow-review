@@ -1,0 +1,71 @@
+{
+  "recorded_date": "2026-10-13",
+  "release": "Local analysis plus online reader v1",
+  "status": "vercel_production_ready",
+  "production_url": "https://flow-review-two.vercel.app",
+  "deployment_id": "dpl_FWaEweDbiqTTvi8GhFAjrRAx3SBX",
+  "deployment_target": "production",
+  "ready_state": "READY",
+  "project": "ryouols-projects/flow-review",
+  "inspector_url": "https://vercel.com/ryouols-projects/flow-review/FWaEweDbiqTTvi8GhFAjrRAx3SBX",
+  "architecture": {
+    "reader": "Static browser frontend; JSON imports stay local",
+    "analysis": "Standalone Node/Git analyzer executed on user computer",
+    "hosted_analysis_api": false,
+    "accounts_or_billing": false
+  },
+  "public_files": {
+    "index.html": "67b5361ca745ed7009349fc0cd1f3e4ecd1cdd73f13fc40f4fb24b51154a3d21",
+    "vercel.json": "e45fb0c82a27cbed6e4d4cd5a7451a60544acd27cc4a0687e9ea39365580091a",
+    "downloads/flow-review-cli.tgz": "27b6396c8b752fe0b4e4a8d687214dcc06443da96c399e9dd02f89ccf7971b1a"
+  },
+  "verification": {
+    "backend_tests": 72,
+    "browser_tests": 23,
+    "real_pr_cases": 6,
+    "original_files": 112,
+    "original_hunks": 312,
+    "exact_edited_lines": 1844,
+    "source_provenance_checks": 414,
+    "dependency_advisories": 0,
+    "visual_qa": "../../design-qa.md",
+    "vercel_input_files": 3,
+    "vercel_ignored": [
+      ".vercel"
+    ],
+    "public_http_probe": false,
+    "public_http_probe_note": "Deployment success and production alias verified from Vercel CLI/API metadata; deployment workflow does not fetch the published URL."
+  },
+  "distribution": {
+    "node": "22+",
+    "git": "2.52+",
+    "github_pr_urls": "Authenticated GitHub CLI with repository access",
+    "regular_archive_files": 6,
+    "license_notices": [
+      "typescript",
+      "diff",
+      "react",
+      "react-dom",
+      "scheduler",
+      "@phosphor-icons/react"
+    ],
+    "appledouble_metadata": false
+  },
+  "privacy": {
+    "private_report_or_repository_published": false,
+    "credentials_in_public_inputs": false,
+    "source_upload_requests_on_six_imports": 0,
+    "notes_and_marks": "Stored by snapshot within browser origin; no cross-device sync"
+  },
+  "protection": {
+    "sso_scope": "all_except_custom_domains",
+    "settings_changed": false,
+    "documentation": "https://vercel.com/docs/deployment-protection",
+    "note": "Inherited protection retained. Share the production alias, not the protected generated deployment URL."
+  },
+  "evidence_limits": [
+    "No human comprehension, speed or willingness-to-pay study",
+    "Static declarations are not guaranteed runtime targets",
+    "Private reports remain as sensitive as their source"
+  ]
+}

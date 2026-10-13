@@ -1,0 +1,15 @@
+export { ArrowLeftIcon as ArrowLeft } from '@phosphor-icons/react/ArrowLeft';
+export { ArrowSquareOutIcon as ArrowSquareOut } from '@phosphor-icons/react/ArrowSquareOut';
+export { CaretDownIcon as CaretDown } from '@phosphor-icons/react/CaretDown';
+export { CaretRightIcon as CaretRight } from '@phosphor-icons/react/CaretRight';
+export { CheckIcon as Check } from '@phosphor-icons/react/Check';
+export { CircleIcon as Circle } from '@phosphor-icons/react/Circle';
+export { DotsThreeIcon as DotsThree } from '@phosphor-icons/react/DotsThree';
+export { FileTextIcon as FileText } from '@phosphor-icons/react/FileText';
+export { FolderSimpleIcon as FolderSimple } from '@phosphor-icons/react/FolderSimple';
+export { GitBranchIcon as GitBranch } from '@phosphor-icons/react/GitBranch';
+export { ListIcon as List } from '@phosphor-icons/react/List';
+export { MagnifyingGlassIcon as MagnifyingGlass } from '@phosphor-icons/react/MagnifyingGlass';
+export { UploadSimpleIcon as UploadSimple } from '@phosphor-icons/react/UploadSimple';
+export { WarningCircleIcon as WarningCircle } from '@phosphor-icons/react/WarningCircle';
+export { XIcon as X } from '@phosphor-icons/react/X';

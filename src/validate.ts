@@ -38,6 +38,7 @@ export function validateReport(value: unknown): Report {
     ['additions', 'deletions'].forEach(k => number(f[k], `${p}.${k}`)); bool(f.binary, `${p}.binary`);
     ['base', 'head', 'oldMode', 'newMode'].forEach(k => optionalString(f[k], `${p}.${k}`));
     strings(f.unitIds, `${p}.unitIds`);
+    let additions = 0, deletions = 0;
     array(f.hunks, `${p}.hunks`).forEach((v, j) => {
       const hp = `${p}.hunks[${j}]`; const h = object(v, hp); const hid = string(h.id, `${hp}.id`);
       if (!hid || hunkIds.has(hid)) fail(`${hp}.id`, 'empty or duplicate hunk id'); hunkIds.add(hid);
@@ -49,8 +50,10 @@ export function validateReport(value: unknown): Report {
         if (line.oldLine !== undefined) number(line.oldLine, `${lp}.oldLine`, 1);
         if (line.newLine !== undefined) number(line.newLine, `${lp}.newLine`, 1);
         if (line.kind === 'add') {
+          additions++;
           if (line.oldLine !== undefined || line.newLine === undefined) fail(lp, 'added line requires only an after coordinate');
         } else if (line.kind === 'remove') {
+          deletions++;
           if (line.newLine !== undefined || line.oldLine === undefined) fail(lp, 'removed line requires only a before coordinate');
         } else if (line.oldLine === undefined || line.newLine === undefined) fail(lp, 'context line requires before and after coordinates');
         if (line.oldLine !== undefined && line.oldLine !== (h.oldStart as number) + oldCount++) fail(lp, 'before coordinates are not contiguous within hunk');
@@ -58,6 +61,8 @@ export function validateReport(value: unknown): Report {
       });
       if (oldCount !== h.oldLines || newCount !== h.newLines) fail(hp, 'line counts do not match hunk coordinates');
     });
+    if (f.additions !== additions || f.deletions !== deletions) fail(p, 'edit counts do not match original hunks');
+    if (f.binary && (additions || deletions || (f.hunks as unknown[]).length || f.base !== undefined || f.head !== undefined)) fail(p, 'opaque files cannot carry text source or hunks');
   });
   const unitIds = new Set<string>();
   const unitMap = new Map<string, Record<string, unknown>>();

@@ -25,6 +25,7 @@ external/dynamic targets remain explicit boundaries. Node.js 22+ required.
 `;
 
 export function runCLI(args: string[]): void {
+  if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Node.js 22 or newer is required.');
   if (!args.length || args.includes('--help') || args.includes('-h')) { console.log(usage); return; }
   const command = args[0], opts: Record<string, string> = {};
   const allowed = new Set(['--repo', '--base', '--head', '--out', '--title', '--input', '--url']);
@@ -47,7 +48,7 @@ export function runCLI(args: string[]): void {
   const output = resolve(opts.out ?? `reports/${command === 'demo' ? 'demo' : 'review'}.html`);
   if (!output.endsWith('.html')) throw new Error('--out must end with .html.');
   const jsonPath = output.slice(0, -5) + '.json';
-  const html = renderReport(report);
+  const html = renderReport(report, { demo: command === 'demo' });
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, html); writeFileSync(jsonPath, JSON.stringify(report, null, 2) + '\n');
   console.log(`${report.files.length} changed files · ${report.coverage.totalHunks} hunks · ${report.units.filter(u => u.changed && u.kind !== 'file').length} changed declarations`);
